@@ -1,0 +1,11 @@
+spring:
+    elasticsearch:
+        cluster-name: my-es
+#        cluster-name: dap-search
+        node-host1: 10.1.0.130
+#        node-host1: 10.117.33.4
+        node-host2: 10.1.0.120
+#        node-host2: 10.117.33.5
+        node-host3: 10.1.0.123
+#        node-host3: 10.117.33.6
+        tcp-port: 9300
