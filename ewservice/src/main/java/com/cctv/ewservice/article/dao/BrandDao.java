@@ -55,6 +55,11 @@ public class BrandDao {
             if ("7".equals(channel)) {
                 QueryBuilder termquery3 = QueryBuilders.termsQuery("channel", "CCTV-7军事", "CCTV-7农业");
                 boolquery.must(termquery3);
+            } else if ("20".equals(channel)) {
+                QueryBuilder termquery3 = QueryBuilders.termsQuery("channel", "CCTV-15音乐", "CCTV-14少儿","CCTV-13新闻", "CCTV-12社会与法",
+                        "CCTV-11戏曲", "CCTV-10科教", "CCTV-9纪录", "CCTV-8电视剧", "CCTV-5+体育赛事", "CCTV-7军事", "CCTV-7农业", "CCTV-5体育", "CCTV-4中文国际", "CCTV-3综艺", "CCTV-2财经", "CCTV-1综合",
+                        "CCTV-NEWS外语", "央视网");
+                boolquery.must(termquery3);
             } else {
                 QueryBuilder termquery3 = QueryBuilders.termQuery("channel", channel);
                 boolquery.must(termquery3);
@@ -102,8 +107,15 @@ public class BrandDao {
         }
 
         if (!"17".equals(channel)) {
-            QueryBuilder termquery3 = QueryBuilders.termQuery("channel", channel);
-            boolquery.must(termquery3);
+            if ("20".equals(channel)) {
+                QueryBuilder termquery3 = QueryBuilders.termsQuery("channel", "CCTV-15音乐", "CCTV-14少儿","CCTV-13新闻", "CCTV-12社会与法",
+                        "CCTV-11戏曲", "CCTV-10科教", "CCTV-9纪录", "CCTV-8电视剧", "CCTV-5+体育赛事", "CCTV-7军事农业", "CCTV-5体育", "CCTV-4中文国际", "CCTV-3综艺", "CCTV-2财经", "CCTV-1综合",
+                        "外语频道", "央视网");
+                boolquery.must(termquery3);
+            } else {
+                QueryBuilder termquery3 = QueryBuilders.termQuery("channel", channel);
+                boolquery.must(termquery3);
+            }
         } else {
             QueryBuilder termquery3 = QueryBuilders.termsQuery("channel", "中国国际广播电台", "中央人民广播电台", "CCTV-15音乐", "CCTV-14少儿","CCTV-13新闻", "CCTV-12社会与法",
                     "CCTV-11戏曲", "CCTV-10科教", "CCTV-9纪录", "CCTV-8电视剧", "CCTV-5+体育赛事", "CCTV-7军事农业", "CCTV-5体育", "CCTV-4中文国际", "CCTV-3综艺", "CCTV-2财经", "CCTV-1综合",
@@ -204,6 +216,7 @@ public class BrandDao {
             map.put("url", qingboMap.get("url"));
             map.put("videoNum", "-");
             map.put("pub_date", String.valueOf(hitmap.get("pub_date")));
+            map.put("time", "-");
         }
         return map;
     }
@@ -322,7 +335,9 @@ public class BrandDao {
             map.put("read", read);
             map.put("videoNum", String.valueOf(videoNum));
             map.put("hd", String.valueOf(hd));
-            map.put("pub_date", date);
+            map.put("pub_date", date.substring(0, date.indexOf(" ")));
+            map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
+            map.put("date", date);
             map.put("url", String.valueOf(hitmap.get("weibo_url")));
             map.put("title", String.valueOf(hitmap.get("weibo_text")));
         }

@@ -98,6 +98,9 @@ public class BrandService {
             case 19:
                 querychannel = "中国国际广播电台";
                 break;
+            case 20:
+                querychannel = "20";
+                break;
             default:
                 querychannel = "17";
         }
@@ -189,6 +192,9 @@ public class BrandService {
                 break;
             case 19:
                 querychannel = "中国国际广播电台";
+                break;
+            case 20:
+                querychannel = "20";
                 break;
             default:
                 querychannel = "17";
@@ -291,6 +297,32 @@ public class BrandService {
         return list;
     }
 
+
+    public List<Map<String,String>> TimeSortList(List<Map<String, String>> list) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        Collections.sort(list, new Comparator<Map<String, String>>() {
+            @Override
+            public int compare(Map<String, String> o1, Map<String, String> o2) {
+                Date date1;
+                Date date2;
+                try {
+                    date1 = format.parse(o1.get("date"));
+                    date2 = format.parse(o2.get("date"));
+                } catch (ParseException e) {
+                    return 0;
+                }
+                if (date1.before(date2)) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            }
+        });
+        Collections.reverse(list);
+        return list;
+    }
+
     public List<Map<String, String>> DateSortList(List<Map<String, String>> list, List<String> dateList) {
         List<Map<String,String>> sortDateReadList = new ArrayList<Map<String,String>>();
         for (int i = 0; i < dateList.size(); i++) {
@@ -372,6 +404,7 @@ public class BrandService {
                     wbid_result_list = brandDao.getWeiBoArticleMid(weiboId, startdate, enddate, keywordList.get(i), map);
                     wb_result.addAll(wbid_result_list);
                 }
+                wb_result = TimeSortList(wb_result);
                 list.addAll(wx_result);
                 list.addAll(wb_result);
         }

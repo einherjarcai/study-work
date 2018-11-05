@@ -317,6 +317,7 @@
         <el-table-column prop="type" label="账号归属" width="100"></el-table-column>
         <el-table-column prop="channel" label="所属频道" width="100"></el-table-column>
         <el-table-column prop="pub_date" label="发稿日期" width="100"></el-table-column>
+        <el-table-column prop="time" label="发稿时间" width="100"></el-table-column>
         <el-table-column prop="brand" label="品牌" width="140"></el-table-column>
         <el-table-column prop="source" label="来源" width="100"></el-table-column>
         <el-table-column prop="url" :show-overflow-tooltip="true" label="URL"  width="100"></el-table-column>
@@ -2069,6 +2070,9 @@ export default {
       }
       if (type === '3') {
         this.bd_channel = [{
+          value: '20',
+          label: '全部'
+        }, {
           value: '0',
           label: '央视网'
         }, {

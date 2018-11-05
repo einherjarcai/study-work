@@ -44,7 +44,7 @@ public class BrandController {
         HSSFWorkbook workbook = new HSSFWorkbook();
         HSSFSheet sheet = workbook.createSheet("新媒体品牌");
         int rowNum = 1;
-        String[] headers = { "序号", "账号名", "账号归属", "所属频道", "发稿日期", "品牌", "来源", "URL", "标题", "阅读量", "互动量", "微博视频播放量"};
+        String[] headers = { "序号", "账号名", "账号归属", "所属频道", "发稿日期", "发稿时间", "品牌", "来源", "URL", "标题", "阅读量", "互动量", "微博视频播放量"};
         HSSFRow row = sheet.createRow(0);
         for(int i=0;i<headers.length;i++){
             HSSFCell cell = row.createCell(i);
@@ -60,24 +60,25 @@ public class BrandController {
             row1.createCell(2).setCellValue(map.get("type"));
             row1.createCell(3).setCellValue(map.get("channel"));
             row1.createCell(4).setCellValue(map.get("pub_date"));
-            row1.createCell(5).setCellValue(map.get("brand"));
-            row1.createCell(6).setCellValue(map.get("source"));
-            row1.createCell(7).setCellValue(map.get("url"));
-            row1.createCell(8).setCellValue(map.get("title"));
+            row1.createCell(5).setCellValue(map.get("time"));
+            row1.createCell(6).setCellValue(map.get("brand"));
+            row1.createCell(7).setCellValue(map.get("source"));
+            row1.createCell(8).setCellValue(map.get("url"));
+            row1.createCell(9).setCellValue(map.get("title"));
             if (brandService.isInteger(map.get("read"))) {
-                row1.createCell(9).setCellValue(Integer.valueOf(map.get("read")));
-            } else {
-                row1.createCell(9).setCellValue(0);
-            }
-            if (brandService.isInteger(map.get("hd"))) {
-                row1.createCell(10).setCellValue(Integer.valueOf(map.get("hd")));
+                row1.createCell(10).setCellValue(Integer.valueOf(map.get("read")));
             } else {
                 row1.createCell(10).setCellValue(0);
             }
-            if (brandService.isInteger(map.get("videoNum"))) {
-                row1.createCell(11).setCellValue(Integer.valueOf(map.get("videoNum")));
+            if (brandService.isInteger(map.get("hd"))) {
+                row1.createCell(11).setCellValue(Integer.valueOf(map.get("hd")));
             } else {
                 row1.createCell(11).setCellValue(0);
+            }
+            if (brandService.isInteger(map.get("videoNum"))) {
+                row1.createCell(12).setCellValue(Integer.valueOf(map.get("videoNum")));
+            } else {
+                row1.createCell(12).setCellValue(0);
             }
             rowNum++;
         }
