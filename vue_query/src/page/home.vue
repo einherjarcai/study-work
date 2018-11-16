@@ -6,18 +6,23 @@
     </div>
     <div class="operation">
       <el-row>
-        <el-col :span="8" v-bind:class="{ active: isActive0 }">
+        <el-col :span="6" v-bind:class="{ active: isActive0 }">
           <span @click="jump(0)"  v-bind:style="{ color: isOnClock0 }">账号
           </span>
         </el-col>
-        <el-col :span="8" v-bind:class="{ active: isActive1 }">
+        <el-col :span="6" v-bind:class="{ active: isActive1 }">
           <span @click="jump(1)"  v-bind:style="{ color: isOnClock1 }">
             文章
           </span>
         </el-col>
-        <el-col :span="8" v-bind:class="{ active: isActive2 }">
+        <el-col :span="6" v-bind:class="{ active: isActive2 }">
           <span @click="jump(2)"  v-bind:style="{ color: isOnClock2 }">
             内容
+          </span>
+        </el-col>
+        <el-col :span="6" v-bind:class="{ active: isActive3 }">
+          <span @click="jump(3)"  v-bind:style="{ color: isOnClock3 }">
+            文件
           </span>
         </el-col>
       </el-row>
@@ -38,18 +43,61 @@ export default {
       isActive0: true,
       isActive1: false,
       isActive2: false,
+      isActive3: false,
       isOnClock0: '#19c2c8',
       isOnClock1: '#cccccc',
-      isOnClock2: '#cccccc'
+      isOnClock2: '#cccccc',
+      isOnClock3: '#cccccc'
     }
   },
   created () {
+    let pageRoute = this.$route.path
+    if (pageRoute === '/account') {
+      this.isActive0 = true
+      this.isActive1 = false
+      this.isActive2 = false
+      this.isActive3 = false
+      this.isOnClock0 = '#19c2c8'
+      this.isOnClock1 = '#cccccc'
+      this.isOnClock2 = '#cccccc'
+      this.isOnClock3 = '#cccccc'
+    }
+    if (pageRoute === '/article') {
+      this.isActive1 = true
+      this.isActive0 = false
+      this.isActive2 = false
+      this.isActive3 = false
+      this.isOnClock1 = '#19c2c8'
+      this.isOnClock0 = '#cccccc'
+      this.isOnClock2 = '#cccccc'
+      this.isOnClock3 = '#cccccc'
+    }
+    if (pageRoute === '/theme') {
+      this.isActive2 = true
+      this.isActive1 = false
+      this.isActive0 = false
+      this.isActive3 = false
+      this.isOnClock2 = '#19c2c8'
+      this.isOnClock1 = '#cccccc'
+      this.isOnClock0 = '#cccccc'
+      this.isOnClock3 = '#cccccc'
+    }
+    if (pageRoute === '/file') {
+      this.isActive3 = true
+      this.isActive1 = false
+      this.isActive2 = false
+      this.isActive0 = false
+      this.isOnClock3 = '#19c2c8'
+      this.isOnClock1 = '#cccccc'
+      this.isOnClock2 = '#cccccc'
+      this.isOnClock0 = '#cccccc'
+    }
   },
   computed: {
   },
   methods: {
     jump (page) {
-      let list = ['/account', '/article', '/theme']
+      let list = ['/account', '/article', '/theme', '/file']
       if (page === 0) {
         this.$router.push({
           path: list[page]
@@ -57,9 +105,11 @@ export default {
         this.isActive0 = true
         this.isActive1 = false
         this.isActive2 = false
+        this.isActive3 = false
         this.isOnClock0 = '#19c2c8'
         this.isOnClock1 = '#cccccc'
         this.isOnClock2 = '#cccccc'
+        this.isOnClock3 = '#cccccc'
       }
       if (page === 1) {
         this.$router.push({
@@ -68,9 +118,11 @@ export default {
         this.isActive0 = false
         this.isActive1 = true
         this.isActive2 = false
+        this.isActive3 = false
         this.isOnClock0 = '#cccccc'
         this.isOnClock1 = '#19c2c8'
         this.isOnClock2 = '#cccccc'
+        this.isOnClock3 = '#cccccc'
       }
       if (page === 2) {
         this.$router.push({
@@ -78,10 +130,25 @@ export default {
         })
         this.isActive0 = false
         this.isActive1 = false
+        this.isActive3 = false
         this.isActive2 = true
         this.isOnClock0 = '#cccccc'
         this.isOnClock1 = '#cccccc'
+        this.isOnClock3 = '#cccccc'
         this.isOnClock2 = '#19c2c8'
+      }
+      if (page === 3) {
+        this.$router.push({
+          path: list[page]
+        })
+        this.isActive0 = false
+        this.isActive1 = false
+        this.isActive2 = false
+        this.isActive3 = true
+        this.isOnClock0 = '#cccccc'
+        this.isOnClock1 = '#cccccc'
+        this.isOnClock2 = '#cccccc'
+        this.isOnClock3 = '#19c2c8'
       }
     }
   }

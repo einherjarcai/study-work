@@ -277,6 +277,22 @@
             </el-option>
           </el-select>
         </el-col>
+        <el-col :span="1"></el-col>
+        <el-col :span="2" style="margin-top: 18px">呈现方式: </el-col>
+        <el-col :span="2">
+          <el-select
+            v-model="bd_sec_show"
+            collapse-tags
+            placeholder="请选择"
+            v-on:change="changeShow">
+            <el-option
+              v-for="item in show_data"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value">
+            </el-option>
+          </el-select>
+        </el-col>
       </el-row>
       <el-row>
         <el-col :span="2" style="margin-top: 18px">开始时间: </el-col>
@@ -307,7 +323,7 @@
         </el-col>
       </el-row>
     </div>
-    <div class="data-table" v-show="bd_show">
+    <div class="data-table" v-show="bd_show_part">
       <el-table
         v-loading="bdloading"
         :data="bd_tableData"
@@ -323,11 +339,35 @@
         <el-table-column prop="url" :show-overflow-tooltip="true" label="URL"  width="100"></el-table-column>
         <el-table-column prop="title" :show-overflow-tooltip="true" label="标题" width="100"></el-table-column>
         <el-table-column prop="read" label="阅读量" width="100"></el-table-column>
+        <el-table-column prop="share" label="转发量/分享量" width="110"></el-table-column>
         <el-table-column prop="hd" label="互动量" width="100"></el-table-column>
         <el-table-column prop="videoNum" label="微博微视频播放量" width="140"></el-table-column>
       </el-table>
       <div class="block" style="text-align: center">
         <el-pagination layout="total,prev, pager, next" v-on:current-change="changeBdPage" :total="bd_total" :current-page.sync = "bd_page" :page-size="20"
+                       :next-text="next" :prev-text="prev"> </el-pagination>
+      </div>
+    </div>
+    <div class="data-table" v-show="bd_show_accu">
+      <el-table
+        v-loading="bd_acculoading"
+        :data="bd_accutableData"
+        style="padding: 10px 10px 0 40px">
+        <el-table-column type="index" :index="bdaccuindexMethod" label="序号" width="60"></el-table-column>
+        <el-table-column prop="brand" :show-overflow-tooltip="true" label="稿件名称" width="200"></el-table-column>
+        <el-table-column prop="date" label="发稿日期" width="100"></el-table-column>
+        <el-table-column prop="wx_count" label="微信发稿量" width="110"></el-table-column>
+        <el-table-column prop="wx_read" label="微信阅读量" width="110"></el-table-column>
+        <el-table-column prop="wx_share" label="微信分享量" width="110"></el-table-column>
+        <el-table-column prop="wx_hd" label="微信互动量" width="110"></el-table-column>
+        <el-table-column prop="wb_count" label="微博发稿量" width="110"></el-table-column>
+        <el-table-column prop="wb_read" label="微博阅读量" width="110"></el-table-column>
+        <el-table-column prop="wb_share" label="微博转发量" width="110"></el-table-column>
+        <el-table-column prop="wb_hd" label="微博互动量" width="110"></el-table-column>
+        <el-table-column prop="wb_video" label="微博微视频播放量" width="140"></el-table-column>
+      </el-table>
+      <div class="block" style="text-align: center">
+        <el-pagination layout="total,prev, pager, next" v-on:current-change="changeBdPage" :total="bd_accutotal" :current-page.sync = "bd_accupage" :page-size="20"
                        :next-text="next" :prev-text="prev"> </el-pagination>
       </div>
     </div>
@@ -346,15 +386,27 @@ export default {
       wx_page: 1,
       wb_page: 1,
       bd_page: 1,
+      bd_accupage: 1,
       wxloading: false,
       wbloading: false,
       bdloading: false,
+      bd_acculoading: false,
       isOnClick0: '#19c2c8',
       isOnClick1: '#cccccc',
       isOnClick2: '#cccccc',
       wx_show: true,
       wb_show: false,
       bd_show: false,
+      bd_show_part: false,
+      bd_show_accu: false,
+      bd_sec_show: '',
+      show_data: [{
+        value: '1',
+        label: '分条'
+      }, {
+        value: '2',
+        label: '分天'
+      }],
       source: [{
         value: '1',
         label: '微信'
@@ -686,6 +738,9 @@ export default {
         value: '0',
         label: '全部'
       }, {
+        value: '12',
+        label: '时政快讯'
+      }, {
         value: '1',
         label: '央视快评'
       }, {
@@ -741,11 +796,13 @@ export default {
       wx_total: 0,
       wb_total: 0,
       bd_total: 0,
+      bd_accutotal: 0,
       next: '下一页',
       prev: '上一页',
       wx_tableData: [],
       wb_tableData: [],
-      bd_tableData: []
+      bd_tableData: [],
+      bd_accutableData: []
     }
   },
   created () {
@@ -765,6 +822,8 @@ export default {
         this.wx_show = true
         this.wb_show = false
         this.bd_show = false
+        this.bd_show_part = false
+        this.bd_show_accu = false
       }
       if (flag === 1) {
         this.isOnClick0 = '#cccccc'
@@ -772,6 +831,8 @@ export default {
         this.isOnClick1 = '#19c2c8'
         this.wx_show = false
         this.bd_show = false
+        this.bd_show_part = false
+        this.bd_show_accu = false
         this.wb_show = true
       }
       if (flag === 2) {
@@ -780,13 +841,14 @@ export default {
         this.isOnClick2 = '#19c2c8'
         this.wx_show = false
         this.bd_show = true
+        this.bd_show_part = true
+        this.bd_show_accu = false
         this.wb_show = false
       }
     },
     changeWxLevelSelect () {
       this.wx_sec_level = ''
       this.wx_sec_channel = ''
-      // console.log(this.wx_sec_type)
       let type = this.wx_sec_type
       if (type === '0') {
         this.wx_level = [{
@@ -2138,6 +2200,17 @@ export default {
         }]
       }
     },
+    changeShow () {
+      let show = this.bd_sec_show
+      if (show === '1') {
+        this.bd_show_part = true
+        this.bd_show_accu = false
+      }
+      if (show === '2') {
+        this.bd_show_accu = true
+        this.bd_show_part = false
+      }
+    },
     showWxData () {
       let _this = this
       this.wx_page = 1
@@ -2195,13 +2268,19 @@ export default {
     },
     showBdData () {
       let _this = this
-      this.bd_page = 1
+      let accu = this.bd_sec_show
+      if (accu === '1') {
+        this.bd_page = 1
+        this.bdloading = true
+      } else {
+        this.bd_accupage = 1
+        this.bd_acculoading = true
+      }
       let type = this.bd_sec_type
       let channel = this.bd_sec_channel
       let startdate = this.bd_sec_startdate
       let enddate = this.bd_sec_enddate
       let keyword = this.bd_sec_keyword
-      this.bdloading = true
       axios.get('/cctv/brand', {
       // axios.get('http://localhost:8080/brand', {
         params: {
@@ -2210,14 +2289,20 @@ export default {
           startdate: startdate,
           enddate: enddate,
           key: keyword,
+          accu: accu,
           page: 1,
           size: 20
         }
       }).then(function (response) {
-        // console.log(response.data)
-        _this.bd_tableData = response.data.tableData
-        _this.bd_total = response.data.total
-        _this.bdloading = false
+        if (accu === '1') {
+          _this.bd_tableData = response.data.tableData
+          _this.bd_total = response.data.total
+          _this.bdloading = false
+        } else {
+          _this.bd_accutableData = response.data.tableData
+          _this.bd_accutotal = response.data.total
+          _this.bd_acculoading = false
+        }
       })
     },
     wxindexMethod (index) {
@@ -2228,6 +2313,9 @@ export default {
     },
     bdindexMethod (index) {
       return index + 20 * (this.bd_page - 1) + 1
+    },
+    bdaccuindexMethod (index) {
+      return index + 20 * (this.bd_accupage - 1) + 1
     },
     changeWxPage (val) {
       let _this = this
@@ -2286,13 +2374,19 @@ export default {
     changeBdPage (val) {
       // console.log('change', val)
       let _this = this
-      this.bd_page = val
+      let accu = this.bd_sec_show
+      if (accu === '1') {
+        this.bd_page = val
+        this.bdloading = true
+      } else {
+        this.bd_accupage = val
+        this.bd_acculoading = true
+      }
       let type = this.bd_sec_type
       let channel = this.bd_sec_channel
       let startdate = this.bd_sec_startdate
       let enddate = this.bd_sec_enddate
       let keyword = this.bd_sec_keyword
-      this.bdloading = true
       axios.get('/cctv/brand', {
       // axios.get('http://localhost:8080/brand', {
         params: {
@@ -2301,13 +2395,20 @@ export default {
           startdate: startdate,
           enddate: enddate,
           key: keyword,
+          accu: accu,
           page: val,
           size: 20
         }
       }).then(function (response) {
-        _this.bd_tableData = response.data.tableData
-        _this.bd_total = response.data.total
-        _this.bdloading = false
+        if (accu === '1') {
+          _this.bd_tableData = response.data.tableData
+          _this.bd_total = response.data.total
+          _this.bdloading = false
+        } else {
+          _this.bd_accutableData = response.data.tableData
+          _this.bd_accutotal = response.data.total
+          _this.bd_acculoading = false
+        }
       })
     },
     downloadWxExcel () {
@@ -2380,6 +2481,12 @@ export default {
       let startdate = this.bd_sec_startdate
       let enddate = this.bd_sec_enddate
       let keyword = this.bd_sec_keyword
+      let accu = this.bd_sec_show
+      if (accu === '1') {
+        this.bdloading = true
+      } else {
+        this.bd_acculoading = true
+      }
       this.bdloading = true
       let _this = this
       axios({
@@ -2391,7 +2498,8 @@ export default {
           channel: channel,
           startdate: startdate,
           enddate: enddate,
-          key: keyword
+          key: keyword,
+          accu: accu
         },
         responseType: 'blob'
       }).then(function (response) {
@@ -2401,7 +2509,11 @@ export default {
         link.href = url
         link.setAttribute('download', '新媒体品牌' + startdate + '-' + enddate + '数据.xls')
         document.body.appendChild(link)
-        _this.bdloading = false
+        if (accu === '1') {
+          _this.bdloading = false
+        } else {
+          _this.bd_acculoading = false
+        }
         link.click()
       })
     }

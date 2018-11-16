@@ -1,6 +1,5 @@
 package com.cctv.ewservice.article.dao;
 
-import com.cctv.ewservice.common.CommonDateFunction;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.transport.TransportClient;
@@ -13,14 +12,11 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.sum.Sum;
-import org.elasticsearch.search.aggregations.metrics.sum.SumAggregationBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +26,10 @@ import java.util.regex.Pattern;
 
 /**
  * @author wangcai
- * @Date Created in 2018/10/22
+ * @Date Created in 2018/11/9
  */
 @Repository
-public class BrandDao {
+public class BrandSecDao {
     @Autowired
     private TransportClient transportClient;
 
@@ -131,38 +127,9 @@ public class BrandDao {
         return list;
     }
 
-
-    public Boolean isWxIdExit(String weixinid, String startdate, String enddate) {
+    public List<Map<String, String>> getWeiXinAllMsgidInfo(List<String> weixinid, String startdate, String enddate, String keyword, List<Map<String, String>> idList) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("weixin_id", weixinid);
-        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(startdate).to(enddate);
-        QueryBuilder termquery3 = QueryBuilders.termQuery("level", "3");
-        boolquery.must(termquery1)
-                .must(rangequery)
-                .must(termquery3);
-
-        SearchResponse response = client
-                .prepareSearch("weixin_article_accu_platform*")
-                .setTypes("type")
-                .setQuery(boolquery)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setSize(1000)
-                .get();
-        SearchHits hits = response.getHits();
-
-        long count = hits.getTotalHits();
-        if (count > 0) {
-            return true;
-        } else {
-            return false;
-        }
-
-    }
-
-
-    public List<Map<String, String>> getWeiXinAllMsgidInfo(String weixinid, String startdate, String enddate, String keyword, Map<String, String> idmap) {
-        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("weixin_id", weixinid);
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("weixin_id", weixinid);
         QueryBuilder termquery2 = QueryBuilders.termQuery("level", "3");
 
         String str = keyword;
@@ -197,10 +164,13 @@ public class BrandDao {
             Map<String, String> map = new HashMap<String, String>();
             map = getWeiXinArticleInfoByMsgid(msgid, startdate, enddate);
             map.put("brand", keyword);
-            map.putAll(idmap);
+            for (Map<String, String> idmap : idList) {
+                if (map.get("weixinid").equals(idmap.get("id"))) {
+                    map.putAll(idmap);
+                }
+            }
             list.add(map);
         }
-//        System.out.println(list);
         return list;
     }
 
@@ -229,14 +199,17 @@ public class BrandDao {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
             String read = String.valueOf(hitmap.get("int_page_read_count"));
+            String id = String.valueOf(hitmap.get("weixin_id"));
             String share = String.valueOf(hitmap.get("share_count"));
             String add = String.valueOf(hitmap.get("add_to_fav_count"));
             Map<String, String> qingboMap = new HashMap<String, String>();
             qingboMap = getQingBoWeiXinArticleLike(msgid);
             int like = Integer.valueOf(qingboMap.get("like"));
             int hd = like + Integer.valueOf(share) + Integer.valueOf(add);
+            map.put("weixinid", id);
             map.put("source", "微信");
             map.put("read", read);
+            map.put("share", share);
             map.put("title", String.valueOf(hitmap.get("title")));
             map.put("hd", String.valueOf(hd));
             map.put("url", qingboMap.get("url"));
@@ -266,9 +239,6 @@ public class BrandDao {
             for (SearchHit hit : hits) {
                 Map<String, Object> hitmap = new HashMap<String, Object>();
                 hitmap = hit.getSourceAsMap();
-                /*if (isInteger(String.valueOf(hitmap.get("likenum_pm")))) {
-                    like = Integer.valueOf(String.valueOf(hitmap.get("likenum_pm")));
-                }*/
                 if (String.valueOf(hitmap.get("likenum_pm")) != "null") {
                     map.put("like", String.valueOf(hitmap.get("likenum_pm")));
                 } else {
@@ -288,7 +258,94 @@ public class BrandDao {
     }
 
 
-    public Boolean isIdExits(String weiboid, String startdate, String enddate ) {
+    public List<Map<String, String>> getWeiXinQingBoArticleInfo(List<String> weixinid, String startdate, String enddate, String keyword, List<Map<String, String>> idList) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("wx_name", weixinid);
+
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(startdate).to(enddate);
+        boolquery.must(termquery1)
+                .must(rangequery);
+
+        String str = keyword;
+        String pattern = "\\(.*?\\)|（.*?）";
+        str = str.replaceAll(pattern, " ");
+        String regEx = "[`~☆★!@#$%^&*()+=|{}':;,\\[\\]》·.<>/?~！@#￥%……（）——+|{}【】‘；：”“’。，、？丨]";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(str);
+        str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
+
+        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("title", str);
+        boolquery.must(queryBuilder2);
+        SearchResponse response = client
+                    .prepareSearch("weixin_article_qingbo*")
+                    .setTypes("type")
+                    .setQuery(boolquery)
+                    .setSearchType(SearchType.QUERY_THEN_FETCH)
+                    .setSize(10000)
+                    .get();
+
+
+        SearchHits hits = response.getHits();
+        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+
+        for (SearchHit hit : hits) {
+            Map<String, Object> hitmap = new HashMap<String, Object>();
+            hitmap = hit.getSourceAsMap();
+            Map<String, String> map = new HashMap<String, String>();
+            String title = String.valueOf(hitmap.get("title"));
+            String id = String.valueOf(hitmap.get("wx_name"));
+            String url = String.valueOf(hitmap.get("url"));
+            String read = String.valueOf(hitmap.get("readnum_pm"));
+            String like = String.valueOf(hitmap.get("likenum_pm"));
+            String time = String.valueOf(hitmap.get("posttime"));
+            map.put("title", title);
+            map.put("source", "微信");
+            map.put("brand", keyword);
+            map.put("url", url);
+            map.put("read", read);
+            map.put("share", "0");
+            map.put("pub_date", time.substring(0, time.indexOf(" ")));
+            map.put("hd", like);
+            map.put("videoNum", "-");
+            map.put("time", "-");
+            for (Map<String, String> idmap : idList) {
+                if (id.equals(idmap.get("id"))) {
+                    map.putAll(idmap);
+                }
+            }
+            list.add(map);
+        }
+        return list;
+    }
+
+    public Boolean isWxIdExit(String weixinid, String startdate, String enddate) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termQuery("weixin_id", weixinid);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(startdate).to(enddate);
+        QueryBuilder termquery3 = QueryBuilders.termQuery("level", "3");
+        boolquery.must(termquery1)
+//                .must(rangequery)
+                .must(termquery3);
+
+        SearchResponse response = client
+                .prepareSearch("weixin_article_accu_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1000)
+                .get();
+        SearchHits hits = response.getHits();
+
+        long count = hits.getTotalHits();
+        if (count > 0) {
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
+    public Boolean isWbIdExits(String weiboid, String startdate, String enddate ) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("uid", weiboid);
 
@@ -312,9 +369,9 @@ public class BrandDao {
         }
     }
 
-    public List<Map<String, String>> getWeiBoArticleMid(String weiboid, String startdate, String enddate, String keyword, Map<String, String> idmap) {
+    public List<Map<String, String>> getWeiBoArticleMid(List<String> weiboid, String startdate, String enddate, String keyword, List<Map<String, String>> idList) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("uid", weiboid);
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("uid", weiboid);
 
         String str = keyword;
         String pattern = "\\(.*?\\)|（.*?）";
@@ -347,11 +404,14 @@ public class BrandDao {
         Terms term = response.getAggregations().get("mid");
         for (Terms.Bucket entry : term.getBuckets()) {
             String mid = entry.getKeyAsString();
-//            System.out.println(mid);
             Map<String, String> map = new HashMap<String, String>();
             map = getWeiBoLatestInfo(mid, startdate, enddate);
             map.put("brand", keyword);
-            map.putAll(idmap);
+            for (Map<String, String> idmap : idList) {
+                if (map.get("weiboid").equals(idmap.get("id"))) {
+                    map.putAll(idmap);
+                }
+            }
             list.add(map);
         }
         return list;
@@ -381,6 +441,7 @@ public class BrandDao {
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
+            String id = String.valueOf(hitmap.get("uid"));
             String repost = String.valueOf(hitmap.get("reposts_accumulation"));
             String comment = String.valueOf(hitmap.get("comments_accumulation"));
             String like = String.valueOf(hitmap.get("attitudes_accumulation"));
@@ -392,8 +453,10 @@ public class BrandDao {
             int videoNum = Integer.valueOf(live) + Integer.valueOf(video);
             int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
 
+            map.put("weiboid", id);
             map.put("source", "微博");
             map.put("read", read);
+            map.put("share", repost);
             map.put("videoNum", String.valueOf(videoNum));
             map.put("hd", String.valueOf(hd));
             map.put("pub_date", date.substring(0, date.indexOf(" ")));
@@ -406,14 +469,22 @@ public class BrandDao {
     }
 
 
-    public List<Map<String, String>> getQingBoWeiBoArticleInfo(String weiboid, String startdate, String enddate, String keyword, Map<String, String> idmap) {
+    public List<Map<String, String>> getQingBoWeiBoArticleInfo(List<String> weiboid, String startdate, String enddate, String keyword, List<Map<String, String>> idList) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("uid", weiboid);
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("create_time").from(startdate + " 00:00:00").to(enddate + " 23:59:59");
         boolquery.must(termquery1)
                 .must(rangequery);
 
-        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("content", keyword);
+        String str = keyword;
+        String pattern = "\\(.*?\\)|（.*?）";
+        str = str.replaceAll(pattern, " ");
+        String regEx = "[`~☆★!@#$%^&*()+=|{}':;,\\[\\]》·.<>/?~！@#￥%……（）——+|{}【】‘；：”“’。，、？丨]";
+        Pattern p = Pattern.compile(regEx);
+        Matcher m = p.matcher(str);
+        str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
+
+        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("content", str);
         boolquery.must(queryBuilder2);
         SearchResponse response = client
                 .prepareSearch("weibo_article_qingbo*")
@@ -441,14 +512,20 @@ public class BrandDao {
             int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
             map.put("source", "微博");
             map.put("title", text);
+            map.put("brand", keyword);
             map.put("url", url);
             map.put("read", read);
+            map.put("share", repost);
             map.put("date", date);
             map.put("hd", String.valueOf(hd));
             map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
             map.put("pub_date", date.substring(0, date.indexOf(" ")));
             map.put("videoNum", "0");
-            map.putAll(idmap);
+            for (Map<String, String> idmap : idList) {
+                if (map.get("weiboid").equals(idmap.get("id"))) {
+                    map.putAll(idmap);
+                }
+            }
             list.add(map);
         }
         return list;

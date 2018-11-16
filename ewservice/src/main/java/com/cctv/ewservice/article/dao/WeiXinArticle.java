@@ -339,7 +339,7 @@ public class WeiXinArticle {
      * @param enddate
      * @return
      */
-    public Boolean isIdExits(String weixinid, String startdate, String enddate ) {
+    public Boolean isIdExits(String weixinid, String startdate, String enddate) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("weixin_id", weixinid);
 

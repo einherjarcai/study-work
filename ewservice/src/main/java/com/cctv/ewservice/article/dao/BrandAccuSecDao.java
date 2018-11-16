@@ -1,6 +1,5 @@
 package com.cctv.ewservice.article.dao;
 
-import com.cctv.ewservice.common.CommonDateFunction;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.transport.TransportClient;
@@ -13,14 +12,11 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.sum.Sum;
-import org.elasticsearch.search.aggregations.metrics.sum.SumAggregationBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PostConstruct;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +26,10 @@ import java.util.regex.Pattern;
 
 /**
  * @author wangcai
- * @Date Created in 2018/10/22
+ * @Date Created in 2018/11/9
  */
 @Repository
-public class BrandDao {
+public class BrandAccuSecDao {
     @Autowired
     private TransportClient transportClient;
 
@@ -44,8 +40,16 @@ public class BrandDao {
         client = this.transportClient;
     }
 
+    public Boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
-    public List<Map<String,String>> getWeiXinIdList(String type, String channel) {
+    public List<String> getWeiXinIdList(String type, String channel) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
 
         if ("1".equals(type)) {
@@ -65,7 +69,6 @@ public class BrandDao {
                 boolquery.must(termquery3);
             }
         }
-
         SearchResponse response = client
                 .prepareSearch("weixin_account_list")
                 .setTypes("type")
@@ -74,22 +77,16 @@ public class BrandDao {
                 .setSize(1000)
                 .get();
         SearchHits hits = response.getHits();
-        List<Map<String,String>> list = new ArrayList<Map<String,String>>();
+        List<String> list = new ArrayList<String>();
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
-            Map<String, String> idmap = new HashMap<String, String>();
-            idmap.put("name", String.valueOf(hitmap.get("nickname")));
-            idmap.put("id", String.valueOf(hitmap.get("wx_id")));
-            idmap.put("type", String.valueOf(hitmap.get("type")));
-            idmap.put("channel", String.valueOf(hitmap.get("channel")));
-            list.add(idmap);
+            list.add(String.valueOf(hitmap.get("wx_id")));
         }
         return list;
     }
 
-
-    public List<Map<String,String>> getWeiBoIdList(String type, String channel) {
+    public List<String> getWeiBoIdList(String type, String channel) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
 
         if ("1".equals(type)) {
@@ -103,6 +100,7 @@ public class BrandDao {
 
         if (!"17".equals(channel)) {
             if ("20".equals(channel)) {
+
             } else {
                 QueryBuilder termquery3 = QueryBuilders.termQuery("channel", channel);
                 boolquery.must(termquery3);
@@ -117,68 +115,35 @@ public class BrandDao {
                 .setSize(1000)
                 .get();
         SearchHits hits = response.getHits();
-        List<Map<String,String>> list = new ArrayList<Map<String,String>>();
+        List<String> list = new ArrayList<String>();
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
-            Map<String, String> idmap = new HashMap<String, String>();
-            idmap.put("name", String.valueOf(hitmap.get("nickname")));
-            idmap.put("id", String.valueOf(hitmap.get("UID")));
-            idmap.put("type", String.valueOf(hitmap.get("type")));
-            idmap.put("channel", String.valueOf(hitmap.get("channel")));
-            list.add(idmap);
+            list.add(String.valueOf(hitmap.get("UID")));
         }
         return list;
     }
 
-
-    public Boolean isWxIdExit(String weixinid, String startdate, String enddate) {
+    /**
+     * 返回大数据微信账号的所有数据
+     * @param weixinid
+     * @param startdate
+     * @param enddate
+     * @param keyword
+     * @return
+     */
+    public List<Integer> getWeiXinAccuAllMsgidInfo(List<String> weixinid, String startdate, String enddate, String keyword) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("weixin_id", weixinid);
-        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(startdate).to(enddate);
-        QueryBuilder termquery3 = QueryBuilders.termQuery("level", "3");
-        boolquery.must(termquery1)
-                .must(rangequery)
-                .must(termquery3);
-
-        SearchResponse response = client
-                .prepareSearch("weixin_article_accu_platform*")
-                .setTypes("type")
-                .setQuery(boolquery)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setSize(1000)
-                .get();
-        SearchHits hits = response.getHits();
-
-        long count = hits.getTotalHits();
-        if (count > 0) {
-            return true;
-        } else {
-            return false;
-        }
-
-    }
-
-
-    public List<Map<String, String>> getWeiXinAllMsgidInfo(String weixinid, String startdate, String enddate, String keyword, Map<String, String> idmap) {
-        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("weixin_id", weixinid);
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("weixin_id", weixinid);
         QueryBuilder termquery2 = QueryBuilders.termQuery("level", "3");
 
-        String str = keyword;
-        String pattern = "\\(.*?\\)|（.*?）";
-        str = str.replaceAll(pattern, " ");
-        String regEx = "[`~☆★!@#$%^&*()+=|{}':;,\\[\\]》·.<>/?~！@#￥%……（）——+|{}【】‘；：”“’。，、？丨]";
-        Pattern p = Pattern.compile(regEx);
-        Matcher m = p.matcher(str);
-        str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
-
-        QueryBuilder termquery3 = QueryBuilders.matchPhraseQuery("title", str);
+        QueryBuilder termquery3 = QueryBuilders.matchPhraseQuery("title", keyword);
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("pub_date").from(startdate).to(enddate);
         boolquery.must(termquery1)
                 .must(termquery2)
                 .must(termquery3)
                 .must(rangequery);
+
         TermsAggregationBuilder msgidAgg = AggregationBuilders.terms("msgid").field("msgid").size(10000);
 
         SearchResponse response = client
@@ -191,24 +156,37 @@ public class BrandDao {
                 .setSize(10000)
                 .get();
         Terms term = response.getAggregations().get("msgid");
-        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+        List<Integer> list = new ArrayList<Integer>();
+        int count = term.getBuckets().size();
+        list.add(count);
+        int read = 0;
+        int hd = 0;
         for (Terms.Bucket entry : term.getBuckets()) {
             String msgid = entry.getKeyAsString();
-            Map<String, String> map = new HashMap<String, String>();
-            map = getWeiXinArticleInfoByMsgid(msgid, startdate, enddate);
-            map.put("brand", keyword);
-            map.putAll(idmap);
-            list.add(map);
+            List<Integer> indexlist = new ArrayList<Integer>();
+            indexlist = getWeiXinAccuArticleInfoByMsgid(msgid, startdate, enddate);
+            read += indexlist.get(0);
+            hd += indexlist.get(1);
         }
-//        System.out.println(list);
+        list.add(read);
+        list.add(hd);
         return list;
     }
 
-    public Map<String, String> getWeiXinArticleInfoByMsgid(String msgid, String startdate, String enddate) {
+    /**
+     * 返回单个文章的微信指标
+     * 查询周期内
+     * @param msgid
+     * @param startdate
+     * @param enddate
+     * @return
+     */
+    public List<Integer> getWeiXinAccuArticleInfoByMsgid(String msgid, String startdate, String enddate) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("msgid", msgid);
         QueryBuilder termquery2 = QueryBuilders.termQuery("level", "3");
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(startdate).to(enddate);
+
         boolquery.must(termquery1)
                 .must(termquery2)
                 .must(rangequery);
@@ -223,32 +201,33 @@ public class BrandDao {
                 .setSize(1)
                 .get();
         SearchHits hits = response.getHits();
-        Map<String, String> map = new HashMap<String, String>();
-
+        List<Integer> list = new ArrayList<Integer>();
+        int readCount = 0;
+        int hd = 0;
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
             String read = String.valueOf(hitmap.get("int_page_read_count"));
             String share = String.valueOf(hitmap.get("share_count"));
             String add = String.valueOf(hitmap.get("add_to_fav_count"));
-            Map<String, String> qingboMap = new HashMap<String, String>();
-            qingboMap = getQingBoWeiXinArticleLike(msgid);
-            int like = Integer.valueOf(qingboMap.get("like"));
-            int hd = like + Integer.valueOf(share) + Integer.valueOf(add);
-            map.put("source", "微信");
-            map.put("read", read);
-            map.put("title", String.valueOf(hitmap.get("title")));
-            map.put("hd", String.valueOf(hd));
-            map.put("url", qingboMap.get("url"));
-            map.put("videoNum", "-");
-            map.put("pub_date", String.valueOf(hitmap.get("pub_date")));
-            map.put("time", "-");
+
+            readCount = Integer.valueOf(read);
+            int shareCount = Integer.valueOf(share);
+            int addCount = Integer.valueOf(add);
+            int like = getQingBoWeiXinArticleLike(msgid);
+            hd = like + shareCount + addCount;
         }
-        return map;
+        list.add(readCount);
+        list.add(hd);
+        return list;
     }
 
-
-    public Map<String, String> getQingBoWeiXinArticleLike(String msgid) {
+    /**
+     * 返回清博对应的微信文章的点赞数
+     * @param msgid
+     * @return
+     */
+    public int getQingBoWeiXinArticleLike(String msgid) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("msgid", msgid);
         boolquery.must(termquery1);
@@ -261,60 +240,37 @@ public class BrandDao {
                 .setSize(1)
                 .get();
         SearchHits hits = response.getHits();
-        Map<String, String> map = new HashMap<String, String>();
+        int like = 0;
         if (hits.totalHits > 0) {
             for (SearchHit hit : hits) {
                 Map<String, Object> hitmap = new HashMap<String, Object>();
                 hitmap = hit.getSourceAsMap();
-                /*if (isInteger(String.valueOf(hitmap.get("likenum_pm")))) {
-                    like = Integer.valueOf(String.valueOf(hitmap.get("likenum_pm")));
-                }*/
-                if (String.valueOf(hitmap.get("likenum_pm")) != "null") {
-                    map.put("like", String.valueOf(hitmap.get("likenum_pm")));
-                } else {
-                    map.put("like", "0");
-                }
-                if (String.valueOf(hitmap.get("url")) != "null") {
-                    map.put("url", String.valueOf(hitmap.get("url")));
-                } else {
-                    map.put("url", "-");
+                String likenum = String.valueOf(hitmap.get("likenum_pm"));
+                if (isInteger(likenum)) {
+                    like = Integer.valueOf(likenum);
                 }
             }
-        } else {
-            map.put("like", "0");
-            map.put("url", "-");
         }
-        return map;
+        return like;
     }
 
 
-    public Boolean isIdExits(String weiboid, String startdate, String enddate ) {
+    /**
+     * 清博账号对应的微信指标
+     * @param weixinid
+     * @param startdate
+     * @param enddate
+     * @param keyword
+     * @param idList
+     * @return
+     */
+    public List<Integer> getWeiXinQingBoArticleInfo(List<String> weixinid, String startdate, String enddate, String keyword) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("uid", weiboid);
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("wx_name", weixinid);
 
-        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("created_time").from(startdate + " 00:00:00").to(enddate + " 23:59:59");
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(startdate).to(enddate);
         boolquery.must(termquery1)
                 .must(rangequery);
-        SearchResponse response = client
-                .prepareSearch("weibo_article_platform*")
-                .setTypes("type")
-                .setQuery(boolquery)
-                .setSearchType(SearchType.QUERY_THEN_FETCH)
-                .setSize(1000)
-                .get();
-        SearchHits hits = response.getHits();
-        long count = hits.getTotalHits();
-//        System.out.println("count: " + count);
-        if (count > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public List<Map<String, String>> getWeiBoArticleMid(String weiboid, String startdate, String enddate, String keyword, Map<String, String> idmap) {
-        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
-        QueryBuilder termquery1 = QueryBuilders.termQuery("uid", weiboid);
 
         String str = keyword;
         String pattern = "\\(.*?\\)|（.*?）";
@@ -324,13 +280,55 @@ public class BrandDao {
         Matcher m = p.matcher(str);
         str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
 
-        QueryBuilder termquery2 = QueryBuilders.matchPhraseQuery("weibo_text", str);
+        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("title", str);
+        boolquery.must(queryBuilder2);
+        SearchResponse response = client
+                .prepareSearch("weixin_article_qingbo*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(10000)
+                .get();
+
+        SearchHits hits = response.getHits();
+        List<Integer> list = new ArrayList<Integer>();
+        int readCount = 0;
+        int hd = 0;
+        int count = (int)hits.getTotalHits();
+        for (SearchHit hit : hits) {
+            Map<String, Object> hitmap = new HashMap<String, Object>();
+            hitmap = hit.getSourceAsMap();
+            String read = String.valueOf(hitmap.get("readnum_pm"));
+            String like = String.valueOf(hitmap.get("likenum_pm"));
+            readCount += Integer.valueOf(read);
+            hd += Integer.valueOf(like);
+        }
+        list.add(count);
+        list.add(readCount);
+        list.add(hd);
+        return list;
+    }
+
+
+    /**
+     * 大数据所有微博账号对应的文章指标
+     * @param weiboid
+     * @param startdate
+     * @param enddate
+     * @param keyword
+     * @return
+     */
+    public List<Integer> getWeiBoAccuAllMsgidInfo(List<String> weiboid, String startdate, String enddate, String keyword) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("uid", weiboid);
+
+        QueryBuilder termquery2 = QueryBuilders.matchPhraseQuery("weibo_text", keyword);
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("created_time").from(startdate + " 00:00:00").to(enddate + " 23:59:59");
         boolquery.must(termquery1)
                 .must(termquery2)
                 .must(rangequery);
 
-        TermsAggregationBuilder midAgg = AggregationBuilders.terms("mid").field("mid").size(1000);
+        TermsAggregationBuilder midAgg = AggregationBuilders.terms("mid").field("mid").size(10000);
 
         SearchResponse response = client
                 .prepareSearch("weibo_article_platform*")
@@ -341,23 +339,36 @@ public class BrandDao {
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(10000)
                 .get();
-
-        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
-
         Terms term = response.getAggregations().get("mid");
+
+        List<Integer> list = new ArrayList<Integer>();
+        int count = term.getBuckets().size();
+        list.add(count);
+        int read = 0;
+        int hd = 0;
+        int video = 0;
         for (Terms.Bucket entry : term.getBuckets()) {
-            String mid = entry.getKeyAsString();
-//            System.out.println(mid);
-            Map<String, String> map = new HashMap<String, String>();
-            map = getWeiBoLatestInfo(mid, startdate, enddate);
-            map.put("brand", keyword);
-            map.putAll(idmap);
-            list.add(map);
+            String msgid = entry.getKeyAsString();
+            List<Integer> indexlist = new ArrayList<Integer>();
+            indexlist = getWeiBoLatestInfo(msgid, startdate, enddate);
+            read += indexlist.get(0);
+            hd += indexlist.get(1);
+            video += indexlist.get(2);
         }
+        list.add(read);
+        list.add(hd);
+        list.add(video);
         return list;
     }
 
-    public Map<String, String> getWeiBoLatestInfo(String mid, String startdate, String enddate) {
+    /**
+     * 返回单个文章的微博指标
+     * @param mid
+     * @param startdate
+     * @param enddate
+     * @return
+     */
+    public List<Integer> getWeiBoLatestInfo(String mid, String startdate, String enddate) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("mid", mid);
         QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
@@ -377,7 +388,10 @@ public class BrandDao {
                 .get();
 
         SearchHits hits = response.getHits();
-        Map<String, String> map = new HashMap<String, String>();
+        List<Integer> list = new ArrayList<Integer>();
+        int readCount = 0;
+        int videoNum = 0;
+        int hd = 0;
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
@@ -385,28 +399,45 @@ public class BrandDao {
             String comment = String.valueOf(hitmap.get("comments_accumulation"));
             String like = String.valueOf(hitmap.get("attitudes_accumulation"));
             String read = String.valueOf(hitmap.get("reads_accumulation"));
-            String live = String.valueOf(hitmap.get("live_play_accumulation"));
-            String video = String.valueOf(hitmap.get("video_play_accumulation"));
-            String date = String.valueOf(hitmap.get("created_time"));
+            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+            String create_time = String.valueOf(hitmap.get("created_time"));
 
-            int videoNum = Integer.valueOf(live) + Integer.valueOf(video);
-            int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
-
-            map.put("source", "微博");
-            map.put("read", read);
-            map.put("videoNum", String.valueOf(videoNum));
-            map.put("hd", String.valueOf(hd));
-            map.put("pub_date", date.substring(0, date.indexOf(" ")));
-            map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
-            map.put("date", date);
-            map.put("url", String.valueOf(hitmap.get("weibo_url")));
-            map.put("title", String.valueOf(hitmap.get("weibo_text")));
+            if (live > 0 || video > 0) {
+                String videoUrl = String.valueOf(hitmap.get("video_url"));
+                if (!"None".equals(videoUrl)) {
+                    String first_time = getVideoArticleDate(videoUrl);
+                    if (first_time != null) {
+                        if (!create_time.equals(first_time)) {
+                            if (live > 0) {
+                                live = 0;
+                            } else if (video > 0) {
+                                video = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            readCount = Integer.valueOf(read);
+            videoNum = live + video;
+            hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
         }
-        return map;
+        list.add(readCount);
+        list.add(hd);
+        list.add(videoNum);
+        return list;
     }
 
 
-    public List<Map<String, String>> getQingBoWeiBoArticleInfo(String weiboid, String startdate, String enddate, String keyword, Map<String, String> idmap) {
+    /**
+     * 返回清博的微博指标
+     * @param weiboid
+     * @param startdate
+     * @param enddate
+     * @param keyword
+     * @return
+     */
+    public List<Integer> getQingBoWeiBoArticleInfo(List<String> weiboid, String startdate, String enddate, String keyword) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("uid", weiboid);
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("create_time").from(startdate + " 00:00:00").to(enddate + " 23:59:59");
@@ -424,33 +455,54 @@ public class BrandDao {
                 .get();
 
         SearchHits hits = response.getHits();
-        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
-
+        List<Integer> list = new ArrayList<Integer>();
+        int readCount = 0;
+        int hd = 0;
+        int count = (int)hits.getTotalHits();
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
-            Map<String, String> map = new HashMap<String, String>();
-            String text = String.valueOf(hitmap.get("content"));
-            String url = String.valueOf(hitmap.get("url"));
             String read = String.valueOf(hitmap.get("read_count"));
             String like = String.valueOf(hitmap.get("attitudes_count"));
             String comment = String.valueOf(hitmap.get("comments_count"));
             String repost = String.valueOf(hitmap.get("reposts_count"));
-            String date = String.valueOf(hitmap.get("create_time"));
 
-            int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
-            map.put("source", "微博");
-            map.put("title", text);
-            map.put("url", url);
-            map.put("read", read);
-            map.put("date", date);
-            map.put("hd", String.valueOf(hd));
-            map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
-            map.put("pub_date", date.substring(0, date.indexOf(" ")));
-            map.put("videoNum", "0");
-            map.putAll(idmap);
-            list.add(map);
+            hd += Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+            readCount += Integer.valueOf(read);
         }
+        list.add(count);
+        list.add(readCount);
+        list.add(hd);
+        list.add(0);
         return list;
+    }
+
+    /**
+     * 返回 video_url 对应的第一篇微博文章的创建时间
+     * @param url
+     * @return
+     */
+    public String getVideoArticleDate(String url) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termQuery("video_url", url);
+        boolquery.must(termquery1);
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("created_time", SortOrder.ASC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+        SearchHits hits = response.getHits();
+        String create_date = null;
+        if (hits.getTotalHits() > 0) {
+            for (SearchHit hit : hits) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit.getSourceAsMap();
+                create_date = String.valueOf(hitmap.get("created_time"));
+            }
+        }
+        return create_date;
     }
 }

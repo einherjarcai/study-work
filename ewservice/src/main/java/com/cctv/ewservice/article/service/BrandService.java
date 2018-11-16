@@ -1,6 +1,9 @@
 package com.cctv.ewservice.article.service;
 
+import com.cctv.ewservice.article.dao.BrandAccuSecDao;
 import com.cctv.ewservice.article.dao.BrandDao;
+import com.cctv.ewservice.article.dao.BrandDepartDayDao;
+import com.cctv.ewservice.article.dao.BrandSecDao;
 import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -9,12 +12,28 @@ import javax.lang.model.type.ArrayType;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class BrandService {
     @Autowired
     BrandDao brandDao;
+    @Autowired
+    FileUploadService fileUploadService;
+    @Autowired
+    BrandSecDao brandSecDao;
+    @Autowired
+    BrandAccuSecDao brandAccuSecDao;
+    @Autowired
+    BrandDepartDayDao brandDepartDayDao;
 
+    /**
+     * 微信账号及属性
+     * @param type
+     * @param channel
+     * @return
+     */
     public List<Map<String,String>> getWeiXinIDList(int type, int channel) {
         Map<String, String> map = new HashMap<String, String>();
         String queryType = null;
@@ -106,10 +125,15 @@ public class BrandService {
         }
         List<Map<String,String>> list = new ArrayList<Map<String,String>>();
         list = brandDao.getWeiXinIdList(queryType, querychannel);
-//        System.out.println(list);
         return list;
     }
 
+    /**
+     * 微博账号及属性
+     * @param type
+     * @param channel
+     * @return
+     */
     public List<Map<String,String>> getWeiBoIDList(int type, int channel) {
         Map<String, String> map = new HashMap<String, String>();
         String queryType = null;
@@ -204,6 +228,11 @@ public class BrandService {
         return list;
     }
 
+    /**
+     * 品牌列表
+     * @param key
+     * @return
+     */
     public List<String> getKeyword(int key) {
         List<String> keywordList = new ArrayList<String>();
         switch (key)
@@ -220,6 +249,7 @@ public class BrandService {
                 keywordList.add("央视财经评论");
                 keywordList.add("陆家嘴观察");
                 keywordList.add("公司行业深观察");
+                keywordList.add("时政快讯");
                 break;
             case 1:
                 keywordList.add("央视快评");
@@ -254,6 +284,9 @@ public class BrandService {
             case 11:
                 keywordList.add("公司行业深观察");
                 break;
+            case 12:
+                keywordList.add("时政快讯");
+                break;
             default:
                 keywordList.add("央视快评");
                 keywordList.add("国际锐评");
@@ -266,10 +299,16 @@ public class BrandService {
                 keywordList.add("央视财经评论");
                 keywordList.add("陆家嘴观察");
                 keywordList.add("公司行业深观察");
+                keywordList.add("时政快讯");
         }
         return keywordList;
     }
 
+    /**
+     * 是否能转化为整数
+     * @param str
+     * @return
+     */
     public Boolean isInteger(String str) {
         try {
             Integer.parseInt(str);
@@ -279,6 +318,11 @@ public class BrandService {
         }
     }
 
+    /**
+     * 按照阅读量排序
+     * @param list
+     * @return
+     */
     public List<Map<String,String>> ReadSortList(List<Map<String, String>> list) {
         Collections.sort(list, new Comparator<Map<String, String>>() {
             public int compare(Map<String, String> o1, Map<String, String> o2) {
@@ -298,6 +342,11 @@ public class BrandService {
     }
 
 
+    /**
+     * 微博所有数据按照发布时间排序
+     * @param list
+     * @return
+     */
     public List<Map<String,String>> TimeSortList(List<Map<String, String>> list) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -323,6 +372,12 @@ public class BrandService {
         return list;
     }
 
+    /**
+     * 微信最终所有结果按照日期分组，并且将每日数据按照阅读量排序
+     * @param list
+     * @param dateList
+     * @return
+     */
     public List<Map<String, String>> DateSortList(List<Map<String, String>> list, List<String> dateList) {
         List<Map<String,String>> sortDateReadList = new ArrayList<Map<String,String>>();
         for (int i = 0; i < dateList.size(); i++) {
@@ -332,13 +387,19 @@ public class BrandService {
                     dayList.add(map);
                 }
             }
+            // 按照阅读量排序
             dayList = ReadSortList(dayList);
             sortDateReadList.addAll(dayList);
         }
         return sortDateReadList;
     }
 
-
+    /**
+     * 获取两个日期之间的所有日期列表
+     * @param startTime
+     * @param endTime
+     * @return
+     */
     public  List<String> getBetweenDate(String startTime, String endTime){
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         // 声明保存日期集合
@@ -367,7 +428,7 @@ public class BrandService {
     }
 
     /**
-     * 获取品牌所有数据
+     * 品牌分天分条所有数据
      *
      * @param type
      * @param channel
@@ -386,31 +447,173 @@ public class BrandService {
         List<String> dateList = new ArrayList<String>();
         dateList = getBetweenDate(startdate, enddate);
 
+        List<String> wxList = new ArrayList<String>();
+        wxList = fileUploadService.getWeiXinIDList(type, channel);
+        List<String> wbList = new ArrayList<String>();
+        wbList = fileUploadService.getWeiBoIDList(type, channel);
+
+        List<String> wxQingBoList = new ArrayList<String>();
+        List<String> wbQingBoList = new ArrayList<String>();
+        for (String id : wxList) {
+            if (!brandSecDao.isWxIdExit(id, startdate, enddate)) {
+                wxQingBoList.add(id);
+            }
+        }
+        for (String id : wbList) {
+            if (!brandSecDao.isWbIdExits(id, startdate, enddate)) {
+                wbQingBoList.add(id);
+            }
+        }
+//        System.out.println("品牌后: " + System.currentTimeMillis());
         List<Map<String, String>> list = new ArrayList<Map<String, String>>();
 
         for (int i = 0; i < keywordList.size(); ++i) {
-                List<Map<String, String>> wx_result = new ArrayList<Map<String, String>>();
-                List<Map<String, String>> wb_result = new ArrayList<Map<String, String>>();
-                for (Map<String, String> map : wxidList) {
-                    List<Map<String, String>> wxid_result_list = new ArrayList<Map<String, String>>();
-                    String weixinid = map.get("id");
-                    wxid_result_list = brandDao.getWeiXinAllMsgidInfo(weixinid, startdate, enddate, keywordList.get(i), map);
-                    wx_result.addAll(wxid_result_list);
-                }
-                wx_result = DateSortList(wx_result, dateList);
-                for (Map<String, String> map : wbidList) {
-                    List<Map<String, String>> wbid_result_list = new ArrayList<Map<String, String>>();
-                    String weiboId = map.get("id");
-                    wbid_result_list = brandDao.getWeiBoArticleMid(weiboId, startdate, enddate, keywordList.get(i), map);
-                    wb_result.addAll(wbid_result_list);
-                }
-                wb_result = TimeSortList(wb_result);
-                list.addAll(wx_result);
-                list.addAll(wb_result);
+            List<Map<String, String>> wx_result = new ArrayList<Map<String, String>>();
+            List<Map<String, String>> wb_result = new ArrayList<Map<String, String>>();
+
+            List<Map<String, String>> wx_bigdata_list = new ArrayList<Map<String, String>>();
+            wx_bigdata_list = brandSecDao.getWeiXinAllMsgidInfo(wxList, startdate, enddate, keywordList.get(i), wxidList);
+            wx_result.addAll(wx_bigdata_list);
+            if (wxQingBoList.size() > 0) {
+                List<Map<String, String>> wx_qb_list = new ArrayList<Map<String, String>>();
+                wx_qb_list = brandSecDao.getWeiXinQingBoArticleInfo(wxQingBoList, startdate, enddate, keywordList.get(i), wxidList);
+                wx_result.addAll(wx_qb_list);
+            }
+            wx_result = DateSortList(wx_result, dateList);
+
+            List<Map<String, String>> wb_bigdata_list = new ArrayList<Map<String, String>>();
+            wb_bigdata_list = brandSecDao.getWeiBoArticleMid(wbList, startdate, enddate, keywordList.get(i), wbidList);
+            wb_result.addAll(wb_bigdata_list);
+
+            if (wbQingBoList.size() > 0) {
+                List<Map<String, String>> wb_qb_list = new ArrayList<Map<String, String>>();
+                wb_qb_list = brandSecDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, keywordList.get(i), wxidList);
+                wb_result.addAll(wb_qb_list);
+            }
+            wb_result = TimeSortList(wb_result);
+
+            list.addAll(wx_result);
+            list.addAll(wb_result);
         }
         return list;
     }
 
+    /**
+     * 品牌累计所有数据
+     * @param type
+     * @param channel
+     * @param key
+     * @param startdate
+     * @param enddate
+     * @return
+     */
+    public List<Map<String, String>> getBrandAccuSecData(int type, int channel, int key, String startdate, String enddate) {
+        List<String> wbidList = new ArrayList<String>();
+        wbidList = fileUploadService.getWeiBoIDList(type, channel);
+        List<String> wxidList = new ArrayList<String>();
+        wxidList = fileUploadService.getWeiXinIDList(type, channel);
+        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+        List<String> keywordList = new ArrayList<String>();
+        keywordList = getKeyword(key);
+
+        List<String> dateList = new ArrayList<String>();
+        dateList = getBetweenDate(startdate, enddate);
+
+        List<String> wxQingBoList = new ArrayList<String>();
+        List<String> wbQingBoList = new ArrayList<String>();
+        for (String id : wxidList) {
+            if (!brandSecDao.isWxIdExit(id, startdate, enddate)) {
+                wxQingBoList.add(id);
+            }
+        }
+        for (String id : wbidList) {
+            if (!brandSecDao.isWbIdExits(id, startdate, enddate)) {
+                wbQingBoList.add(id);
+            }
+        }
+
+        for (int i = 0; i < keywordList.size(); ++i) {
+            for (int j = 0; j < dateList.size(); ++j) {
+                Map<String, String> result = new HashMap<String, String>();
+                int weixinCount = 0;
+                int weixinRead = 0;
+                int weixinShare = 0;
+                int weixinHd = 0;
+                int weiboCount = 0;
+                int weiboRead = 0;
+                int weiboShare = 0;
+                int weiboHd = 0;
+                int weiboVideo = 0;
+
+                List<Integer> wx_bigdata = new ArrayList<Integer>();
+                wx_bigdata = brandDepartDayDao.getWeiXinAccuAllMsgidInfo(wxidList, dateList.get(j), dateList.get(j), keywordList.get(i));
+                if (wx_bigdata.size() == 4) {
+                    weixinCount += wx_bigdata.get(0);
+                    weixinRead += wx_bigdata.get(1);
+                    weixinShare += wx_bigdata.get(2);
+                    weixinHd += wx_bigdata.get(3);
+                }
+                if (wxQingBoList.size() > 0) {
+                    List<Integer> wx_qb = new ArrayList<Integer>();
+                    wx_qb = brandDepartDayDao.getWeiXinQingBoArticleInfo(wxQingBoList, dateList.get(j), enddate, keywordList.get(i));
+                    if (wx_qb.size() == 4) {
+                        weixinCount += wx_qb.get(0);
+                        weixinRead += wx_qb.get(1);
+                        weixinShare += wx_qb.get(2);
+                        weixinHd += wx_qb.get(3);
+                    }
+                }
+
+                List<Integer> wb_bigdata = new ArrayList<Integer>();
+                wb_bigdata = brandDepartDayDao.getWeiBoAccuAllMsgidInfo(wbidList, dateList.get(j), dateList.get(j), keywordList.get(i));
+                if (wb_bigdata.size() == 5) {
+                    weiboCount += wb_bigdata.get(0);
+                    weiboRead += wb_bigdata.get(1);
+                    weiboShare += wb_bigdata.get(2);
+                    weiboHd += wb_bigdata.get(3);
+                    weiboVideo += wb_bigdata.get(4);
+                }
+                if (wbQingBoList.size() > 0) {
+                    List<Integer> wb_qb = new ArrayList<Integer>();
+                    wb_qb = brandDepartDayDao.getQingBoWeiBoArticleInfo(wbQingBoList, dateList.get(j), enddate, keywordList.get(i));
+                    if (wb_qb.size() == 5) {
+                        weiboCount += wb_qb.get(0);
+                        weiboRead += wb_qb.get(1);
+                        weiboShare += wb_bigdata.get(2);
+                        weiboHd += wb_qb.get(3);
+                        weiboVideo += wb_qb.get(4);
+                    }
+                }
+
+                result.put("date", dateList.get(j));
+                result.put("brand", keywordList.get(i));
+                result.put("wx_count", String.valueOf(weixinCount));
+                result.put("wx_read", String.valueOf(weixinRead));
+                result.put("wx_share", String.valueOf(weixinShare));
+                result.put("wx_hd", String.valueOf(weixinHd));
+                result.put("wb_count", String.valueOf(weiboCount));
+                result.put("wb_read", String.valueOf(weiboRead));
+                result.put("wb_share", String.valueOf(weiboShare));
+                result.put("wb_hd", String.valueOf(weiboHd));
+                result.put("wb_video", String.valueOf(weiboVideo));
+                list.add(result);
+            }
+            brandDepartDayDao.setMsgMidListToNull();
+        }
+        return list;
+    }
+
+    /**
+     * 品牌分天页面数据
+     * @param type
+     * @param channel
+     * @param key
+     * @param startdate
+     * @param enddate
+     * @param page
+     * @param size
+     * @return
+     */
     public String getBrandPageData(int type, int channel, int key, String startdate, String enddate, int page, int size) {
         List<Map<String, String>> list = new ArrayList<Map<String, String>>();
         list = getAllBrandData(type, channel, key, startdate, enddate);
@@ -419,7 +622,37 @@ public class BrandService {
         int start = (page - 1) * size;
 
         List<Map<String, String>> result = new ArrayList<Map<String, String>>();
+        for (int i = start; i< size + start; ++i) {
+            if (i < total) {
+                result.add(list.get(i));
+            }
+        }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("total", total);
+        jsonObject.put("count", result.size());
+        jsonObject.put("tableData", result);
+        return jsonObject.toString();
+    }
 
+    /**
+     * 品牌累计页面数据
+     * @param type
+     * @param channel
+     * @param key
+     * @param startdate
+     * @param enddate
+     * @param page
+     * @param size
+     * @return
+     */
+    public String getBrandAccuPageData(int type, int channel, int key, String startdate, String enddate, int page, int size) {
+        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
+        list = getBrandAccuSecData(type, channel, key, startdate, enddate);
+
+        int total = list.size();
+        int start = (page - 1) * size;
+
+        List<Map<String, String>> result = new ArrayList<Map<String, String>>();
         for (int i = start; i< size + start; ++i) {
             if (i < total) {
                 result.add(list.get(i));

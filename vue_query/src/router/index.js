@@ -25,6 +25,12 @@ const theme = r =>
     () => r(require('../page/theme')),
     'theme'
   )
+const uploadfile = r =>
+  require.ensure(
+    [],
+    () => r(require('../page/FileUpload')),
+    'fileupload'
+  )
 const home = r =>
   require.ensure(
     [],
@@ -61,6 +67,11 @@ export default new Router({
           path: '/theme',
           name: 'theme',
           component: theme
+        },
+        {
+          path: '/file',
+          name: 'fileupload',
+          component: uploadfile
         }
       ]
     }
