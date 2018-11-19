@@ -293,7 +293,7 @@ public class FileUploadService {
             wb_result.addAll(wbid_result_list);
             if (wbQingBoList.size() > 0) {
                 List<Map<String, String>> qb_result_list = new ArrayList<Map<String, String>>();
-                qb_result_list = brandSecDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str, wxidList);
+                qb_result_list = brandSecDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str, wbidList);
                 wb_result.addAll(qb_result_list);
             }
             wb_result = brandService.TimeSortList(wb_result);

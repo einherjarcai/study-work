@@ -417,6 +417,15 @@ public class BrandSecDao {
         return list;
     }
 
+    public Boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
     public Map<String, String> getWeiBoLatestInfo(String mid, String startdate, String enddate) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("mid", mid);
@@ -446,11 +455,28 @@ public class BrandSecDao {
             String comment = String.valueOf(hitmap.get("comments_accumulation"));
             String like = String.valueOf(hitmap.get("attitudes_accumulation"));
             String read = String.valueOf(hitmap.get("reads_accumulation"));
-            String live = String.valueOf(hitmap.get("live_play_accumulation"));
-            String video = String.valueOf(hitmap.get("video_play_accumulation"));
             String date = String.valueOf(hitmap.get("created_time"));
 
-            int videoNum = Integer.valueOf(live) + Integer.valueOf(video);
+            String create_time = String.valueOf(hitmap.get("created_time"));
+            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+            if (live > 0 || video > 0) {
+                String videoUrl = String.valueOf(hitmap.get("video_url"));
+                if (!"None".equals(videoUrl)) {
+                    String first_time = getVideoArticleDate(videoUrl);
+                    if (first_time != null) {
+                        if (!create_time.equals(first_time)) {
+                            if (live > 0) {
+                                live = 0;
+                            } else if (video > 0) {
+                                video = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            int videoNum = live + video;
+
             int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
 
             map.put("weiboid", id);
@@ -466,6 +492,30 @@ public class BrandSecDao {
             map.put("title", String.valueOf(hitmap.get("weibo_text")));
         }
         return map;
+    }
+
+    public String getVideoArticleDate(String url) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termQuery("video_url", url);
+        boolquery.must(termquery1);
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("created_time", SortOrder.ASC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+        SearchHits hits = response.getHits();
+        String create_date = null;
+        if (hits.getTotalHits() > 0) {
+            for (SearchHit hit : hits) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit.getSourceAsMap();
+                create_date = String.valueOf(hitmap.get("created_time"));
+            }
+        }
+        return create_date;
     }
 
 
@@ -508,6 +558,7 @@ public class BrandSecDao {
             String comment = String.valueOf(hitmap.get("comments_count"));
             String repost = String.valueOf(hitmap.get("reposts_count"));
             String date = String.valueOf(hitmap.get("create_time"));
+            String id = String.valueOf(hitmap.get("uid"));
 
             int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
             map.put("source", "微博");
@@ -522,7 +573,7 @@ public class BrandSecDao {
             map.put("pub_date", date.substring(0, date.indexOf(" ")));
             map.put("videoNum", "0");
             for (Map<String, String> idmap : idList) {
-                if (map.get("weiboid").equals(idmap.get("id"))) {
+                if (id.equals(idmap.get("id"))) {
                     map.putAll(idmap);
                 }
             }

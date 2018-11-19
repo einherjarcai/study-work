@@ -555,7 +555,7 @@ public class BrandService {
                 }
                 if (wxQingBoList.size() > 0) {
                     List<Integer> wx_qb = new ArrayList<Integer>();
-                    wx_qb = brandDepartDayDao.getWeiXinQingBoArticleInfo(wxQingBoList, dateList.get(j), enddate, keywordList.get(i));
+                    wx_qb = brandDepartDayDao.getWeiXinQingBoArticleInfo(wxQingBoList, dateList.get(j), dateList.get(j), keywordList.get(i));
                     if (wx_qb.size() == 4) {
                         weixinCount += wx_qb.get(0);
                         weixinRead += wx_qb.get(1);
@@ -575,11 +575,11 @@ public class BrandService {
                 }
                 if (wbQingBoList.size() > 0) {
                     List<Integer> wb_qb = new ArrayList<Integer>();
-                    wb_qb = brandDepartDayDao.getQingBoWeiBoArticleInfo(wbQingBoList, dateList.get(j), enddate, keywordList.get(i));
+                    wb_qb = brandDepartDayDao.getQingBoWeiBoArticleInfo(wbQingBoList, dateList.get(j), dateList.get(j), keywordList.get(i));
                     if (wb_qb.size() == 5) {
                         weiboCount += wb_qb.get(0);
                         weiboRead += wb_qb.get(1);
-                        weiboShare += wb_bigdata.get(2);
+                        weiboShare += wb_qb.get(2);
                         weiboHd += wb_qb.get(3);
                         weiboVideo += wb_qb.get(4);
                     }

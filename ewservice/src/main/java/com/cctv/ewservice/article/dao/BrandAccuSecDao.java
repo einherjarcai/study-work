@@ -261,7 +261,6 @@ public class BrandAccuSecDao {
      * @param startdate
      * @param enddate
      * @param keyword
-     * @param idList
      * @return
      */
     public List<Integer> getWeiXinQingBoArticleInfo(List<String> weixinid, String startdate, String enddate, String keyword) {

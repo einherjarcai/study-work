@@ -2455,6 +2455,7 @@ export default {
       axios({
         method: 'get',
         url: '/cctv/article/weibo/download',
+        // url: 'http://localhost:8080/article/weibo/download',
         params: {
           type: type,
           level: level,
@@ -2487,7 +2488,6 @@ export default {
       } else {
         this.bd_acculoading = true
       }
-      this.bdloading = true
       let _this = this
       axios({
         method: 'get',

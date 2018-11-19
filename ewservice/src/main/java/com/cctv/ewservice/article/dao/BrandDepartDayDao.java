@@ -13,7 +13,6 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
-import org.elasticsearch.search.aggregations.metrics.sum.Sum;
 import org.elasticsearch.search.aggregations.metrics.sum.SumAggregationBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -373,6 +372,7 @@ public class BrandDepartDayDao {
             read = yes_list.get(0);
             share = yes_list.get(1);
             hd = yes_list.get(2);
+            video = yes_list.get(3);
         }
 
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
@@ -406,8 +406,9 @@ public class BrandDepartDayDao {
             List<Integer> indexlist = new ArrayList<Integer>();
             indexlist = getWeiBoLatestInfo(msgid, startdate, enddate);
             read += indexlist.get(0);
-            hd += indexlist.get(1);
-            video += indexlist.get(2);
+            share += indexlist.get(1);
+            hd += indexlist.get(2);
+            video += indexlist.get(3);
         }
         list.add(count);
         list.add(read);
@@ -460,6 +461,23 @@ public class BrandDepartDayDao {
                     readCount += Integer.valueOf(read);
                     shareCount += Integer.valueOf(repost);
                     hd += Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+
+                    String create_time = String.valueOf(hitmap.get("created_time"));
+                    if (live > 0 || video > 0) {
+                        String videoUrl = String.valueOf(hitmap.get("video_url"));
+                        if (!"None".equals(videoUrl)) {
+                            String first_time = getVideoArticleDate(videoUrl);
+                            if (first_time != null) {
+                                if (!create_time.equals(first_time)) {
+                                    if (live > 0) {
+                                        live = 0;
+                                    } else if (video > 0) {
+                                        video = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     videoNum += (live + video);
 
                     if (Integer.valueOf(read) > 0) {
@@ -519,6 +537,22 @@ public class BrandDepartDayDao {
                 int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
                 int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
 
+                String create_time = String.valueOf(hitmap.get("created_time"));
+                if (live > 0 || video > 0) {
+                    String videoUrl = String.valueOf(hitmap.get("video_url"));
+                    if (!"None".equals(videoUrl)) {
+                        String first_time = getVideoArticleDate(videoUrl);
+                        if (first_time != null) {
+                            if (!create_time.equals(first_time)) {
+                                if (live > 0) {
+                                    live = 0;
+                                } else if (video > 0) {
+                                    video = 0;
+                                }
+                            }
+                        }
+                    }
+                }
                 readCount = Integer.valueOf(read);
                 shareCount = Integer.valueOf(repost);
                 hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);

@@ -556,12 +556,54 @@ public class WeiBoArticle {
             }
             map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
             map.put("date", date.substring(0, date.indexOf(" ")));
-            map.put("live", String.valueOf(hitmap.get("live_play_accumulation")));
-            map.put("video", String.valueOf(hitmap.get("video_play_accumulation")));
+
+            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+            String create_time = String.valueOf(hitmap.get("created_time"));
+            if (live > 0 || video > 0) {
+                String videoUrl = String.valueOf(hitmap.get("video_url"));
+                if (!"None".equals(videoUrl)) {
+                    String first_time = getVideoArticleDate(videoUrl);
+                    if (first_time != null) {
+                        if (!create_time.equals(first_time)) {
+                            if (live > 0) {
+                                live = 0;
+                            } else if (video > 0) {
+                                video = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            map.put("live", String.valueOf(live));
+            map.put("video", String.valueOf(video));
         }
         return map;
     }
 
+    public String getVideoArticleDate(String url) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termQuery("video_url", url);
+        boolquery.must(termquery1);
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("created_time", SortOrder.ASC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+        SearchHits hits = response.getHits();
+        String create_date = null;
+        if (hits.getTotalHits() > 0) {
+            for (SearchHit hit : hits) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit.getSourceAsMap();
+                create_date = String.valueOf(hitmap.get("created_time"));
+            }
+        }
+        return create_date;
+    }
 
     /**
      * 获取清博微博文章数据
