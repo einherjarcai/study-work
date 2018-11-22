@@ -1,7 +1,7 @@
 package com.cctv.ewservice.article.service;
 
-import com.cctv.ewservice.article.dao.BrandAccuSecDao;
-import com.cctv.ewservice.article.dao.BrandSecDao;
+import com.cctv.ewservice.article.dao.BatchQueryAccuDao;
+import com.cctv.ewservice.article.dao.BatchQueryDao;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -30,10 +30,10 @@ public class FileUploadService {
     BrandService brandService;
 
     @Autowired
-    BrandAccuSecDao brandAccuSecDao;
+    BatchQueryAccuDao batchQueryAccuDao;
 
     @Autowired
-    BrandSecDao brandSecDao;
+    BatchQueryDao batchQueryDao;
 
     /**
      * 是否为整数
@@ -255,12 +255,12 @@ public class FileUploadService {
         List<String> wbQingBoList = new ArrayList<String>();
         List<String> wxQingBoList = new ArrayList<String>();
         for (String id : wxList) {
-            if (!brandSecDao.isWxIdExit(id, startdate, enddate)) {
+            if (!batchQueryDao.isWxIdExit(id, startdate, enddate)) {
                 wxQingBoList.add(id);
             }
         }
         for (String id : wbList) {
-            if (!brandSecDao.isWbIdExits(id, startdate, enddate)) {
+            if (!batchQueryDao.isWbIdExits(id, startdate, enddate)) {
                 wbQingBoList.add(id);
             }
         }
@@ -279,21 +279,21 @@ public class FileUploadService {
             List<Map<String, String>> wb_result = new ArrayList<Map<String, String>>();
 
             List<Map<String, String>> wxid_result_list = new ArrayList<Map<String, String>>();
-            wxid_result_list = brandSecDao.getWeiXinAllMsgidInfo(wxList, startdate, enddate, str, wxidList);
+            wxid_result_list = batchQueryDao.getWeiXinAllMsgidInfo(wxList, startdate, enddate, str, wxidList);
             wx_result.addAll(wxid_result_list);
             if (wxQingBoList.size() > 0) {
                 List<Map<String, String>> qbid_result_list = new ArrayList<Map<String, String>>();
-                qbid_result_list = brandSecDao.getWeiXinQingBoArticleInfo(wxQingBoList, startdate, enddate, str, wxidList);
+                qbid_result_list = batchQueryDao.getWeiXinQingBoArticleInfo(wxQingBoList, startdate, enddate, str, wxidList);
                 wx_result.addAll(qbid_result_list);
             }
             wx_result = brandService.DateSortList(wx_result, dateList);
 
             List<Map<String, String>> wbid_result_list = new ArrayList<Map<String, String>>();
-            wbid_result_list = brandSecDao.getWeiBoArticleMid(wbList, startdate, enddate, str, wbidList);
+            wbid_result_list = batchQueryDao.getWeiBoArticleMid(wbList, startdate, enddate, str, wbidList);
             wb_result.addAll(wbid_result_list);
             if (wbQingBoList.size() > 0) {
                 List<Map<String, String>> qb_result_list = new ArrayList<Map<String, String>>();
-                qb_result_list = brandSecDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str, wbidList);
+                qb_result_list = batchQueryDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str, wbidList);
                 wb_result.addAll(qb_result_list);
             }
             wb_result = brandService.TimeSortList(wb_result);
@@ -324,12 +324,12 @@ public class FileUploadService {
         List<String> wbQingBoList = new ArrayList<String>();
         List<String> wxQingBoList = new ArrayList<String>();
         for (String id : wxidList) {
-            if (!brandSecDao.isWxIdExit(id, startdate, enddate)) {
+            if (!batchQueryDao.isWxIdExit(id, startdate, enddate)) {
                 wxQingBoList.add(id);
             }
         }
         for (String id : wbidList) {
-            if (!brandSecDao.isWbIdExits(id, startdate, enddate)) {
+            if (!batchQueryDao.isWbIdExits(id, startdate, enddate)) {
                 wbQingBoList.add(id);
             }
         }
@@ -359,7 +359,7 @@ public class FileUploadService {
             str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
 
             List<Integer> wx_data = new ArrayList<Integer>();
-            wx_data = brandAccuSecDao.getWeiXinAccuAllMsgidInfo(wxidList, startdate, enddate, str);
+            wx_data = batchQueryAccuDao.getWeiXinAccuAllMsgidInfo(wxidList, startdate, enddate, str);
             if (wx_data.size() == 3) {
                 weixinCount += wx_data.get(0);
                 weixinRead += wx_data.get(1);
@@ -367,7 +367,7 @@ public class FileUploadService {
             }
             if (wxQingBoList.size() > 0) {
                 List<Integer> qb_wx_data = new ArrayList<Integer>();
-                qb_wx_data = brandAccuSecDao.getWeiXinQingBoArticleInfo(wxQingBoList, startdate, enddate, str);
+                qb_wx_data = batchQueryAccuDao.getWeiXinQingBoArticleInfo(wxQingBoList, startdate, enddate, str);
                 if (qb_wx_data.size() == 3) {
                     weixinCount += qb_wx_data.get(0);
                     weixinRead += qb_wx_data.get(1);
@@ -376,7 +376,7 @@ public class FileUploadService {
             }
 
             List<Integer> wb_data = new ArrayList<Integer>();
-            wb_data = brandAccuSecDao.getWeiBoAccuAllMsgidInfo(wbidList, startdate, enddate, str);
+            wb_data = batchQueryAccuDao.getWeiBoAccuAllMsgidInfo(wbidList, startdate, enddate, str);
             if (wb_data.size() == 4) {
                 weiboCount += wb_data.get(0);
                 weiboRead += wb_data.get(1);
@@ -387,7 +387,7 @@ public class FileUploadService {
             // 清博账号对应的指标
             if (wbQingBoList.size() > 0) {
                 List<Integer> qb_wb_data = new ArrayList<Integer>();
-                qb_wb_data = brandAccuSecDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str);
+                qb_wb_data = batchQueryAccuDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str);
                 if (qb_wb_data.size() == 4) {
                     weiboCount += qb_wb_data.get(0);
                     weiboRead += qb_wb_data.get(1);
@@ -506,7 +506,7 @@ public class FileUploadService {
                 querychannel = "17";
         }
         List<String> list = new ArrayList<String>();
-        list = brandAccuSecDao.getWeiXinIdList(queryType, querychannel);
+        list = batchQueryAccuDao.getWeiXinIdList(queryType, querychannel);
 //        System.out.println(list);
         return list;
     }
@@ -607,7 +607,7 @@ public class FileUploadService {
                 querychannel = "17";
         }
         List<String> list = new ArrayList<String>();
-        list = brandAccuSecDao.getWeiBoIdList(queryType, querychannel);
+        list = batchQueryAccuDao.getWeiBoIdList(queryType, querychannel);
         return list;
     }
 }

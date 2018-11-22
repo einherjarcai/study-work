@@ -250,6 +250,8 @@ public class BrandService {
                 keywordList.add("陆家嘴观察");
                 keywordList.add("公司行业深观察");
                 keywordList.add("时政快讯");
+                keywordList.add("时政新闻眼");
+                keywordList.add("央视快讯");
                 break;
             case 1:
                 keywordList.add("央视快评");
@@ -287,6 +289,12 @@ public class BrandService {
             case 12:
                 keywordList.add("时政快讯");
                 break;
+            case 13:
+                keywordList.add("时政新闻眼");
+                break;
+            case 14:
+                keywordList.add("央视快讯");
+                break;
             default:
                 keywordList.add("央视快评");
                 keywordList.add("国际锐评");
@@ -300,6 +308,8 @@ public class BrandService {
                 keywordList.add("陆家嘴观察");
                 keywordList.add("公司行业深观察");
                 keywordList.add("时政快讯");
+                keywordList.add("时政新闻眼");
+                keywordList.add("央视快讯");
         }
         return keywordList;
     }

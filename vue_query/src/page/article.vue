@@ -741,6 +741,12 @@ export default {
         value: '12',
         label: '时政快讯'
       }, {
+        value: '13',
+        label: '时政新闻眼'
+      }, {
+        value: '14',
+        label: '央视快讯'
+      }, {
         value: '1',
         label: '央视快评'
       }, {
@@ -2281,8 +2287,8 @@ export default {
       let startdate = this.bd_sec_startdate
       let enddate = this.bd_sec_enddate
       let keyword = this.bd_sec_keyword
-      axios.get('/cctv/brand', {
-      // axios.get('http://localhost:8080/brand', {
+      // axios.get('/cctv/brand', {
+      axios.get('http://localhost:8080/brand', {
         params: {
           type: type,
           channel: channel,

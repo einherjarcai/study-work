@@ -3,10 +3,7 @@ package com.cctv.ewservice.article.dao;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -25,11 +22,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * @author wangcai
- * @Date Created in 2018/11/9
+ * @author        wangcai
+ * @program       ewservice
+ * @description   批量加载分天分条数据查询
+ * @create        2018-11-20 13:35
  */
 @Repository
-public class BrandSecDao {
+public class BatchQueryDao {
     @Autowired
     private TransportClient transportClient;
 
@@ -140,7 +139,9 @@ public class BrandSecDao {
         Matcher m = p.matcher(str);
         str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
 
-        QueryBuilder termquery3 = QueryBuilders.matchPhraseQuery("title", str);
+//        QueryBuilder termquery3 = QueryBuilders.matchPhraseQuery("title", str);
+        QueryBuilder termquery3 = QueryBuilders.matchQuery("title", str);
+        ((MatchQueryBuilder) termquery3).minimumShouldMatch("100%");
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("pub_date").from(startdate).to(enddate);
         boolquery.must(termquery1)
                 .must(termquery2)
@@ -152,6 +153,7 @@ public class BrandSecDao {
                 .prepareSearch("weixin_article_accu_platform*")
                 .setTypes("type")
                 .setQuery(boolquery)
+                .setMinScore(10)
                 .addSort("pub_date", SortOrder.ASC)
                 .addAggregation(msgidAgg)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
@@ -274,15 +276,18 @@ public class BrandSecDao {
         Matcher m = p.matcher(str);
         str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
 
-        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("title", str);
+        QueryBuilder queryBuilder2 = QueryBuilders.matchQuery("title", str);
+        ((MatchQueryBuilder) queryBuilder2).minimumShouldMatch("100%");
+
         boolquery.must(queryBuilder2);
         SearchResponse response = client
-                    .prepareSearch("weixin_article_qingbo*")
-                    .setTypes("type")
-                    .setQuery(boolquery)
-                    .setSearchType(SearchType.QUERY_THEN_FETCH)
-                    .setSize(10000)
-                    .get();
+                .prepareSearch("weixin_article_qingbo*")
+                .setTypes("type")
+                .setMinScore(10)
+                .setQuery(boolquery)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(10000)
+                .get();
 
 
         SearchHits hits = response.getHits();
@@ -381,7 +386,8 @@ public class BrandSecDao {
         Matcher m = p.matcher(str);
         str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
 
-        QueryBuilder termquery2 = QueryBuilders.matchPhraseQuery("weibo_text", str);
+        QueryBuilder termquery2 = QueryBuilders.matchQuery("weibo_text", str);
+        ((MatchQueryBuilder) termquery2).minimumShouldMatch("100%");
         RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("created_time").from(startdate + " 00:00:00").to(enddate + " 23:59:59");
         boolquery.must(termquery1)
                 .must(termquery2)
@@ -394,8 +400,9 @@ public class BrandSecDao {
                 .prepareSearch("weibo_article_platform*")
                 .setTypes("type")
                 .setQuery(boolquery)
-                .addSort("created_time", SortOrder.ASC)
+                .setMinScore(10)
                 .addAggregation(midAgg)
+                .addSort("created_time", SortOrder.ASC)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(10000)
                 .get();
@@ -535,11 +542,14 @@ public class BrandSecDao {
         Matcher m = p.matcher(str);
         str = m.replaceAll(" ").trim().replace(" ", " ").replace("\\", " ");
 
-        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("content", str);
+//        QueryBuilder queryBuilder2 = QueryBuilders.matchPhraseQuery("content", str);
+        QueryBuilder queryBuilder2 = QueryBuilders.matchQuery("content", str);
+        ((MatchQueryBuilder) queryBuilder2).minimumShouldMatch("100%");
         boolquery.must(queryBuilder2);
         SearchResponse response = client
                 .prepareSearch("weibo_article_qingbo*")
                 .setTypes("type")
+                .setMinScore(10)
                 .setQuery(boolquery)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(10000)
