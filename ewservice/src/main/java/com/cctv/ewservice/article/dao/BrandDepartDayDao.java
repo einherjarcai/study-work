@@ -152,17 +152,29 @@ public class BrandDepartDayDao {
                     String read = String.valueOf(hitmap.get("int_page_read_count"));
                     String share = String.valueOf(hitmap.get("share_count"));
                     String add = String.valueOf(hitmap.get("add_to_fav_count"));
-                    readCount += Integer.valueOf(read);
-                    shareCount += Integer.valueOf(share);
-                    addCount += Integer.valueOf(add);
-                    if (Integer.valueOf(read) > 0) {
+                    int read_count = Integer.valueOf(read);
+                    int share_count = Integer.valueOf(share);
+                    int add_count = Integer.valueOf(add);
+                    if (read_count > 0) {
                         String before_day = CommonDateFunction.convertCircleToBFStartDate(0, date);
                         List<Integer> list = new ArrayList<Integer>();
                         list = getYesMsgData(before_day, s);
-                        readCount -= list.get(0);
-                        shareCount -= list.get(1);
-                        addCount -= list.get(2);
+                        read_count -= list.get(0);
+                        share_count -= list.get(1);
+                        add_count -= list.get(2);
                     }
+                    if (read_count < 0) {
+                        read_count = 0;
+                    }
+                    if (share_count < 0) {
+                        share_count = 0;
+                    }
+                    if (add_count < 0) {
+                        add_count = 0;
+                    }
+                    readCount += read_count;
+                    shareCount += share_count;
+                    addCount += add_count;
                 }
             }
         }
@@ -272,12 +284,11 @@ public class BrandDepartDayDao {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("msgid", msgid);
         boolquery.must(termquery1);
-        SumAggregationBuilder likeAgg = AggregationBuilders.sum("like").field("likenum_pm");
         SearchResponse response = client
                 .prepareSearch("weixin_article_qingbo*")
                 .setTypes("type")
                 .setQuery(boolquery)
-                .addSort("likenum_pm", SortOrder.DESC)
+                .addSort("likenum_newest", SortOrder.DESC)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(1)
                 .get();
@@ -287,7 +298,7 @@ public class BrandDepartDayDao {
             for (SearchHit hit : hits) {
                 Map<String, Object> hitmap = new HashMap<String, Object>();
                 hitmap = hit.getSourceAsMap();
-                String likenum = String.valueOf(hitmap.get("likenum_pm"));
+                String likenum = String.valueOf(hitmap.get("likenum_newest"));
                 if (isInteger(likenum)) {
                     like = Integer.valueOf(likenum);
                 }
@@ -340,8 +351,8 @@ public class BrandDepartDayDao {
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
-            String read = String.valueOf(hitmap.get("readnum_pm"));
-            String like = String.valueOf(hitmap.get("likenum_pm"));
+            String read = String.valueOf(hitmap.get("readnum_newest"));
+            String like = String.valueOf(hitmap.get("likenum_newest"));
             readCount += Integer.valueOf(read);
             hd += Integer.valueOf(like);
         }
@@ -458,9 +469,9 @@ public class BrandDepartDayDao {
                     int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
                     int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
 
-                    readCount += Integer.valueOf(read);
-                    shareCount += Integer.valueOf(repost);
-                    hd += Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+                    int read_count = Integer.valueOf(read);
+                    int share_ount = Integer.valueOf(repost);
+                    int hd_count = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
 
                     String create_time = String.valueOf(hitmap.get("created_time"));
                     if (live > 0 || video > 0) {
@@ -478,17 +489,33 @@ public class BrandDepartDayDao {
                             }
                         }
                     }
-                    videoNum += (live + video);
+                    int video_num = (live + video);
 
-                    if (Integer.valueOf(read) > 0) {
+                    if (read_count > 0) {
                         String before_day = CommonDateFunction.convertCircleToBFStartDate(0, date);
                         List<Integer> list = new ArrayList<Integer>();
                         list = getYesMidData(before_day, s);
-                        readCount -= list.get(0);
-                        shareCount -= list.get(1);
-                        hd -= list.get(2);
-                        videoNum -= list.get(3);
+                        read_count -= list.get(0);
+                        share_ount -= list.get(1);
+                        hd_count -= list.get(2);
+                        video_num -= list.get(3);
                     }
+                    if (read_count < 0) {
+                        read_count = 0;
+                    }
+                    if (share_ount < 0) {
+                        share_ount = 0;
+                    }
+                    if (hd_count < 0) {
+                        hd_count = 0;
+                    }
+                    if (video_num < 0) {
+                        video_num = 0;
+                    }
+                    readCount += read_count;
+                    shareCount += share_ount;
+                    hd += hd_count;
+                    videoNum += video_num;
                 }
             }
         }

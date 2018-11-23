@@ -107,6 +107,7 @@
         <el-table-column prop="title" :show-overflow-tooltip="true" label="标题" width="100"></el-table-column>
         <el-table-column prop="url" :show-overflow-tooltip="true" label="URL"  width="100"></el-table-column>
         <el-table-column prop="read" label="阅读量" width="100"></el-table-column>
+        <el-table-column prop="share" label="转发量/分享量" width="110"></el-table-column>
         <el-table-column prop="hd" label="互动量" width="100"></el-table-column>
         <el-table-column prop="videoNum" label="微博微视频播放量" width="140"></el-table-column>
       </el-table>
@@ -125,9 +126,11 @@
         <el-table-column prop="date" label="发稿日期" width="160"></el-table-column>
         <el-table-column prop="wx_count" label="微信发稿量" width="110"></el-table-column>
         <el-table-column prop="wx_read" label="微信阅读量" width="110"></el-table-column>
+        <el-table-column prop="wx_share" label="微信分享量" width="110"></el-table-column>
         <el-table-column prop="wx_hd" label="微信互动量" width="110"></el-table-column>
         <el-table-column prop="wb_count" label="微博发稿量" width="110"></el-table-column>
         <el-table-column prop="wb_read" label="微博阅读量" width="110"></el-table-column>
+        <el-table-column prop="wb_share" label="微博转发量" width="110"></el-table-column>
         <el-table-column prop="wb_hd" label="微博互动量" width="110"></el-table-column>
         <el-table-column prop="wb_video" label="微博微视频播放量" width="140"></el-table-column>
       </el-table>
@@ -526,7 +529,7 @@ export default {
         method: 'post',
         url: '/cctv/file/download',
         // url: 'http://localhost:8080/file/download',
-        params: params,
+        data: params,
         responseType: 'blob'
       }).then(function (response) {
       // axios.post('http://localhost:8080/file/download', params).then(function (response) {

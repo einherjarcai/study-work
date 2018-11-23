@@ -334,13 +334,24 @@ public class FileUploadService {
             }
         }
 
+        int weixinCountAll = 0;
+        int weixinReadAll = 0;
+        int weixinShareALl = 0;
+        int weixinHdAll = 0;
+        int weiboCountAll = 0;
+        int weiboReadAll = 0;
+        int weiboShareAll = 0;
+        int weiboHdAll = 0;
+        int weiboVideoAll = 0;
         for (int i = 0; i < keywordList.size(); ++i) {
             Map<String, String> result = new HashMap<String, String>();
             int weixinCount = 0;
             int weixinRead = 0;
+            int weixinShare = 0;
             int weixinHd = 0;
             int weiboCount = 0;
             int weiboRead = 0;
+            int weiboShare = 0;
             int weiboHd = 0;
             int weiboVideo = 0;
 
@@ -360,39 +371,43 @@ public class FileUploadService {
 
             List<Integer> wx_data = new ArrayList<Integer>();
             wx_data = batchQueryAccuDao.getWeiXinAccuAllMsgidInfo(wxidList, startdate, enddate, str);
-            if (wx_data.size() == 3) {
+            if (wx_data.size() == 4) {
                 weixinCount += wx_data.get(0);
                 weixinRead += wx_data.get(1);
-                weixinHd += wx_data.get(2);
+                weixinShare += wx_data.get(2);
+                weixinHd += wx_data.get(3);
             }
             if (wxQingBoList.size() > 0) {
                 List<Integer> qb_wx_data = new ArrayList<Integer>();
                 qb_wx_data = batchQueryAccuDao.getWeiXinQingBoArticleInfo(wxQingBoList, startdate, enddate, str);
-                if (qb_wx_data.size() == 3) {
+                if (qb_wx_data.size() == 4) {
                     weixinCount += qb_wx_data.get(0);
                     weixinRead += qb_wx_data.get(1);
-                    weixinHd += qb_wx_data.get(2);
+                    weixinShare += qb_wx_data.get(2);
+                    weixinHd += qb_wx_data.get(3);
                 }
             }
 
             List<Integer> wb_data = new ArrayList<Integer>();
             wb_data = batchQueryAccuDao.getWeiBoAccuAllMsgidInfo(wbidList, startdate, enddate, str);
-            if (wb_data.size() == 4) {
+            if (wb_data.size() == 5) {
                 weiboCount += wb_data.get(0);
                 weiboRead += wb_data.get(1);
-                weiboHd += wb_data.get(2);
-                weiboVideo += wb_data.get(3);
+                weiboShare += wb_data.get(2);
+                weiboHd += wb_data.get(3);
+                weiboVideo += wb_data.get(4);
             }
 
             // 清博账号对应的指标
             if (wbQingBoList.size() > 0) {
                 List<Integer> qb_wb_data = new ArrayList<Integer>();
                 qb_wb_data = batchQueryAccuDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, str);
-                if (qb_wb_data.size() == 4) {
+                if (qb_wb_data.size() == 5) {
                     weiboCount += qb_wb_data.get(0);
                     weiboRead += qb_wb_data.get(1);
-                    weiboHd += qb_wb_data.get(2);
-                    weiboVideo += qb_wb_data.get(3);
+                    weiboShare += qb_wb_data.get(2);
+                    weiboHd += qb_wb_data.get(3);
+                    weiboVideo += qb_wb_data.get(4);
                 }
             }
 
@@ -400,14 +415,42 @@ public class FileUploadService {
             result.put("brand", str1);
             result.put("wx_count", String.valueOf(weixinCount));
             result.put("wx_read", String.valueOf(weixinRead));
+            result.put("wx_share", String.valueOf(weixinShare));
             result.put("wx_hd", String.valueOf(weixinHd));
             result.put("wb_count", String.valueOf(weiboCount));
             result.put("wb_read", String.valueOf(weiboRead));
+            result.put("wb_share", String.valueOf(weiboShare));
             result.put("wb_hd", String.valueOf(weiboHd));
             result.put("wb_video", String.valueOf(weiboVideo));
             list.add(result);
+
+            weixinCountAll  +=  weixinCount;
+            weixinReadAll   +=  weixinRead;
+            weixinShareALl  +=  weixinShare;
+            weixinHdAll     +=  weixinHd;
+            weiboCountAll   +=  weiboCount;
+            weiboReadAll    +=  weiboRead;
+            weiboShareAll   +=  weiboShare;
+            weiboHdAll      +=  weiboHd;
+            weiboVideoAll   +=  weiboVideo;
         }
-        return list;
+        List<Map<String, String>> result_list = new ArrayList<Map<String, String>>();
+        Map<String, String> accu_map = new HashMap<String, String>();
+        accu_map.put("date", startdate + "~" + enddate);
+        accu_map.put("brand", "汇总");
+        accu_map.put("wx_count", String.valueOf(weixinCountAll));
+        accu_map.put("wx_read", String.valueOf(weixinReadAll));
+        accu_map.put("wx_share", String.valueOf(weixinShareALl));
+        accu_map.put("wx_hd", String.valueOf(weixinHdAll));
+        accu_map.put("wb_count", String.valueOf(weiboCountAll));
+        accu_map.put("wb_read", String.valueOf(weiboReadAll));
+        accu_map.put("wb_share", String.valueOf(weiboShareAll));
+        accu_map.put("wb_hd", String.valueOf(weiboHdAll));
+        accu_map.put("wb_video", String.valueOf(weiboVideoAll));
+        result_list.add(accu_map);
+
+        result_list.addAll(list);
+        return result_list;
     }
 
     /**

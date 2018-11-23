@@ -474,7 +474,7 @@ public class WeiXinArticle {
                 .prepareSearch("weixin_article_qingbo*")
                 .setTypes("type")
                 .setQuery(boolquery)
-                .addSort("likenum_pm", SortOrder.DESC)
+                .addSort("likenum_newest", SortOrder.DESC)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(1)
                 .get();
@@ -489,8 +489,8 @@ public class WeiXinArticle {
                 } else {
                     map.put("url", "-");
                 }
-                if (String.valueOf(hitmap.get("likenum_pm")) != "null") {
-                    map.put("like", String.valueOf(hitmap.get("likenum_pm")));
+                if (String.valueOf(hitmap.get("likenum_newest")) != "null") {
+                    map.put("like", String.valueOf(hitmap.get("likenum_newest")));
                 } else {
                     map.put("like", "-");
                 }
@@ -558,8 +558,8 @@ public class WeiXinArticle {
             Map<String, String> map = new HashMap<String, String>();
             String title = String.valueOf(hitmap.get("title"));
             String url = String.valueOf(hitmap.get("url"));
-            String read = String.valueOf(hitmap.get("readnum_pm"));
-            String like = String.valueOf(hitmap.get("likenum_pm"));
+            String read = String.valueOf(hitmap.get("readnum_newest"));
+            String like = String.valueOf(hitmap.get("likenum_newest"));
             String time = String.valueOf(hitmap.get("posttime"));
             if (Integer.valueOf(String.valueOf(hitmap.get("top"))) != 1) {
                 map.put("istop", "否");

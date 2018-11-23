@@ -1815,6 +1815,7 @@ export default {
       let accu = this.wb_sec_show
       this.wbloading = true
       axios.get('/cctv/account/weibo', {
+      // axios.get('http://localhost:8080/account/weibo', {
         params: {
           type: type,
           level: level,

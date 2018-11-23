@@ -229,7 +229,7 @@ public class BrandSecDao {
                 .prepareSearch("weixin_article_qingbo*")
                 .setTypes("type")
                 .setQuery(boolquery)
-                .addSort("likenum_pm", SortOrder.DESC)
+                .addSort("likenum_newest", SortOrder.DESC)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(1)
                 .get();
@@ -239,8 +239,8 @@ public class BrandSecDao {
             for (SearchHit hit : hits) {
                 Map<String, Object> hitmap = new HashMap<String, Object>();
                 hitmap = hit.getSourceAsMap();
-                if (String.valueOf(hitmap.get("likenum_pm")) != "null") {
-                    map.put("like", String.valueOf(hitmap.get("likenum_pm")));
+                if (String.valueOf(hitmap.get("likenum_newest")) != "null") {
+                    map.put("like", String.valueOf(hitmap.get("likenum_newest")));
                 } else {
                     map.put("like", "0");
                 }
@@ -295,8 +295,8 @@ public class BrandSecDao {
             String title = String.valueOf(hitmap.get("title"));
             String id = String.valueOf(hitmap.get("wx_name"));
             String url = String.valueOf(hitmap.get("url"));
-            String read = String.valueOf(hitmap.get("readnum_pm"));
-            String like = String.valueOf(hitmap.get("likenum_pm"));
+            String read = String.valueOf(hitmap.get("readnum_newest"));
+            String like = String.valueOf(hitmap.get("likenum_newest"));
             String time = String.valueOf(hitmap.get("posttime"));
             map.put("title", title);
             map.put("source", "微信");

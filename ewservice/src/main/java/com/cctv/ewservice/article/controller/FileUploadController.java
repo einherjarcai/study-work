@@ -102,7 +102,7 @@ public class FileUploadController {
             HSSFWorkbook workbook = new HSSFWorkbook();
             HSSFSheet sheet = workbook.createSheet("稿件");
             int rowNum = 1;
-            String[] headers = { "序号", "账号名", "账号归属", "所属频道", "发稿日期", "发稿时间", "稿件名称", "来源", "URL", "标题", "阅读量", "互动量", "微博视频播放量"};
+            String[] headers = { "序号", "账号名", "账号归属", "所属频道", "发稿日期", "发稿时间", "稿件名称", "来源", "URL", "标题", "阅读量", "转发量/分享量", "互动量", "微博视频播放量"};
             HSSFRow row = sheet.createRow(0);
             for(int i=0;i<headers.length;i++){
                 HSSFCell cell = row.createCell(i);
@@ -128,15 +128,20 @@ public class FileUploadController {
                 } else {
                     row1.createCell(10).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("hd"))) {
-                    row1.createCell(11).setCellValue(Integer.valueOf(map.get("hd")));
+                if (fileUploadService.isInteger(map.get("share"))) {
+                    row1.createCell(11).setCellValue(Integer.valueOf(map.get("share")));
                 } else {
                     row1.createCell(11).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("videoNum"))) {
-                    row1.createCell(12).setCellValue(Integer.valueOf(map.get("videoNum")));
+                if (fileUploadService.isInteger(map.get("hd"))) {
+                    row1.createCell(12).setCellValue(Integer.valueOf(map.get("hd")));
                 } else {
                     row1.createCell(12).setCellValue(0);
+                }
+                if (fileUploadService.isInteger(map.get("videoNum"))) {
+                    row1.createCell(13).setCellValue(Integer.valueOf(map.get("videoNum")));
+                } else {
+                    row1.createCell(13).setCellValue(0);
                 }
                 rowNum++;
             }
@@ -151,7 +156,7 @@ public class FileUploadController {
             HSSFWorkbook workbook = new HSSFWorkbook();
             HSSFSheet sheet = workbook.createSheet("稿件");
             int rowNum = 1;
-            String[] headers = { "序号", "稿件名称", "发稿日期", "微信发稿量", "微信阅读量", "微信互动量","微博发稿量", "微博阅读量", "微博互动量", "微博视频播放量"};
+            String[] headers = { "序号", "稿件名称", "发稿日期", "微信发稿量", "微信阅读量", "微信分享量", "微信互动量","微博发稿量", "微博阅读量", "微博转发量", "微博互动量", "微博视频播放量"};
             HSSFRow row = sheet.createRow(0);
             for(int i=0;i<headers.length;i++){
                 HSSFCell cell = row.createCell(i);
@@ -175,30 +180,40 @@ public class FileUploadController {
                 } else {
                     row1.createCell(4).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("wx_hd"))) {
-                    row1.createCell(5).setCellValue(Integer.valueOf(map.get("wx_hd")));
+                if (fileUploadService.isInteger(map.get("wx_share"))) {
+                    row1.createCell(5).setCellValue(Integer.valueOf(map.get("wx_share")));
                 } else {
                     row1.createCell(5).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("wb_count"))) {
-                    row1.createCell(6).setCellValue(Integer.valueOf(map.get("wb_count")));
+                if (fileUploadService.isInteger(map.get("wx_hd"))) {
+                    row1.createCell(6).setCellValue(Integer.valueOf(map.get("wx_hd")));
                 } else {
                     row1.createCell(6).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("wb_read"))) {
-                    row1.createCell(7).setCellValue(Integer.valueOf(map.get("wb_read")));
+                if (fileUploadService.isInteger(map.get("wb_count"))) {
+                    row1.createCell(7).setCellValue(Integer.valueOf(map.get("wb_count")));
                 } else {
                     row1.createCell(7).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("wb_hd"))) {
-                    row1.createCell(8).setCellValue(Integer.valueOf(map.get("wb_hd")));
+                if (fileUploadService.isInteger(map.get("wb_read"))) {
+                    row1.createCell(8).setCellValue(Integer.valueOf(map.get("wb_read")));
                 } else {
                     row1.createCell(8).setCellValue(0);
                 }
-                if (fileUploadService.isInteger(map.get("wb_video"))) {
-                    row1.createCell(9).setCellValue(Integer.valueOf(map.get("wb_video")));
+                if (fileUploadService.isInteger(map.get("wb_share"))) {
+                    row1.createCell(9).setCellValue(Integer.valueOf(map.get("wb_share")));
                 } else {
                     row1.createCell(9).setCellValue(0);
+                }
+                if (fileUploadService.isInteger(map.get("wb_hd"))) {
+                    row1.createCell(10).setCellValue(Integer.valueOf(map.get("wb_hd")));
+                } else {
+                    row1.createCell(10).setCellValue(0);
+                }
+                if (fileUploadService.isInteger(map.get("wb_video"))) {
+                    row1.createCell(11).setCellValue(Integer.valueOf(map.get("wb_video")));
+                } else {
+                    row1.createCell(11).setCellValue(0);
                 }
                 rowNum++;
             }

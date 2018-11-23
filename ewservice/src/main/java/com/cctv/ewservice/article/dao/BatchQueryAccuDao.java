@@ -161,15 +161,18 @@ public class BatchQueryAccuDao {
         int count = term.getBuckets().size();
         list.add(count);
         int read = 0;
+        int share = 0;
         int hd = 0;
         for (Terms.Bucket entry : term.getBuckets()) {
             String msgid = entry.getKeyAsString();
             List<Integer> indexlist = new ArrayList<Integer>();
             indexlist = getWeiXinAccuArticleInfoByMsgid(msgid, startdate, enddate);
             read += indexlist.get(0);
-            hd += indexlist.get(1);
+            share += indexlist.get(1);
+            hd += indexlist.get(2);
         }
         list.add(read);
+        list.add(share);
         list.add(hd);
         return list;
     }
@@ -204,6 +207,7 @@ public class BatchQueryAccuDao {
         SearchHits hits = response.getHits();
         List<Integer> list = new ArrayList<Integer>();
         int readCount = 0;
+        int shareCount = 0;
         int hd = 0;
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
@@ -213,12 +217,13 @@ public class BatchQueryAccuDao {
             String add = String.valueOf(hitmap.get("add_to_fav_count"));
 
             readCount = Integer.valueOf(read);
-            int shareCount = Integer.valueOf(share);
+            shareCount = Integer.valueOf(share);
             int addCount = Integer.valueOf(add);
             int like = getQingBoWeiXinArticleLike(msgid);
             hd = like + shareCount + addCount;
         }
         list.add(readCount);
+        list.add(shareCount);
         list.add(hd);
         return list;
     }
@@ -236,7 +241,7 @@ public class BatchQueryAccuDao {
                 .prepareSearch("weixin_article_qingbo*")
                 .setTypes("type")
                 .setQuery(boolquery)
-                .addSort("likenum_pm", SortOrder.DESC)
+                .addSort("likenum_newest", SortOrder.DESC)
                 .setSearchType(SearchType.QUERY_THEN_FETCH)
                 .setSize(1)
                 .get();
@@ -246,7 +251,7 @@ public class BatchQueryAccuDao {
             for (SearchHit hit : hits) {
                 Map<String, Object> hitmap = new HashMap<String, Object>();
                 hitmap = hit.getSourceAsMap();
-                String likenum = String.valueOf(hitmap.get("likenum_pm"));
+                String likenum = String.valueOf(hitmap.get("likenum_newest"));
                 if (isInteger(likenum)) {
                     like = Integer.valueOf(likenum);
                 }
@@ -295,18 +300,20 @@ public class BatchQueryAccuDao {
         SearchHits hits = response.getHits();
         List<Integer> list = new ArrayList<Integer>();
         int readCount = 0;
+        int shareCount = 0;
         int hd = 0;
         int count = (int)hits.getTotalHits();
         for (SearchHit hit : hits) {
             Map<String, Object> hitmap = new HashMap<String, Object>();
             hitmap = hit.getSourceAsMap();
-            String read = String.valueOf(hitmap.get("readnum_pm"));
-            String like = String.valueOf(hitmap.get("likenum_pm"));
+            String read = String.valueOf(hitmap.get("readnum_newest"));
+            String like = String.valueOf(hitmap.get("likenum_newest"));
             readCount += Integer.valueOf(read);
             hd += Integer.valueOf(like);
         }
         list.add(count);
         list.add(readCount);
+        list.add(shareCount);
         list.add(hd);
         return list;
     }
@@ -350,6 +357,7 @@ public class BatchQueryAccuDao {
         int count = term.getBuckets().size();
         list.add(count);
         int read = 0;
+        int share = 0;
         int hd = 0;
         int video = 0;
         for (Terms.Bucket entry : term.getBuckets()) {
@@ -357,10 +365,12 @@ public class BatchQueryAccuDao {
             List<Integer> indexlist = new ArrayList<Integer>();
             indexlist = getWeiBoLatestInfo(msgid, startdate, enddate);
             read += indexlist.get(0);
-            hd += indexlist.get(1);
-            video += indexlist.get(2);
+            share += indexlist.get(1);
+            hd += indexlist.get(2);
+            video += indexlist.get(3);
         }
         list.add(read);
+        list.add(share);
         list.add(hd);
         list.add(video);
         return list;
@@ -395,6 +405,7 @@ public class BatchQueryAccuDao {
         SearchHits hits = response.getHits();
         List<Integer> list = new ArrayList<Integer>();
         int readCount = 0;
+        int shareCount = 0;
         int videoNum = 0;
         int hd = 0;
         for (SearchHit hit : hits) {
@@ -424,10 +435,12 @@ public class BatchQueryAccuDao {
                 }
             }
             readCount = Integer.valueOf(read);
+            shareCount = Integer.valueOf(repost);
             videoNum = live + video;
             hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
         }
         list.add(readCount);
+        list.add(shareCount);
         list.add(hd);
         list.add(videoNum);
         return list;
@@ -464,6 +477,7 @@ public class BatchQueryAccuDao {
         SearchHits hits = response.getHits();
         List<Integer> list = new ArrayList<Integer>();
         int readCount = 0;
+        int shareCount = 0;
         int hd = 0;
         int count = (int)hits.getTotalHits();
         for (SearchHit hit : hits) {
@@ -476,9 +490,11 @@ public class BatchQueryAccuDao {
 
             hd += Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
             readCount += Integer.valueOf(read);
+            shareCount += Integer.valueOf(repost);
         }
         list.add(count);
         list.add(readCount);
+        list.add(shareCount);
         list.add(hd);
         list.add(0);
         return list;

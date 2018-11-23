@@ -593,22 +593,36 @@ public class WeiBoAccountInfoDao {
             }
             int all = like + comment + repost;
             if (!pub_date.equals(date)) {
-                List<Integer> yes_list = new ArrayList<Integer>();
-                yes_list = getYesDataInfo(mid, date);
-                if (yes_list.size() > 0) {
-                    int yes_read = yes_list.get(0);
-                    int yes_live = yes_list.get(1);
-                    int yes_video = yes_list.get(2);
-                    int yes_all = yes_list.get(3);
-                    read = read - yes_read;
-                    if (live > 0) {
-                        live = live - yes_live;
+                if (read > 0) {
+                    List<Integer> yes_list = new ArrayList<Integer>();
+                    yes_list = getYesDataInfo(mid, date);
+                    if (yes_list.size() > 0) {
+                        int yes_read = yes_list.get(0);
+                        int yes_live = yes_list.get(1);
+                        int yes_video = yes_list.get(2);
+                        int yes_all = yes_list.get(3);
+                        read = read - yes_read;
+                        if (live > 0) {
+                            live = live - yes_live;
+                        }
+                        if (video > 0) {
+                            video = video - yes_video;
+                        }
+                        all = all - yes_all;
                     }
-                    if (video > 0) {
-                        video = video - yes_video;
-                    }
-                    all = all - yes_all;
                 }
+            }
+            if (read < 0) {
+                read = 0;
+            }
+            if (live < 0) {
+                live = 0;
+            }
+            if (video < 0) {
+                video = 0;
+            }
+            if (all < 0) {
+                all = 0;
             }
             list.add(read);
             list.add(live);
