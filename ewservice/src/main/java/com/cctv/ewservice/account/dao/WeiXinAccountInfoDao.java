@@ -314,7 +314,7 @@ public class WeiXinAccountInfoDao {
     }
 
     /**
-     * 获取账号数据最新更新时间
+     * 获取大数据账号数据最新更新时间
      * @return
      */
     public String getLatestUpdateDate() {
@@ -337,6 +337,24 @@ public class WeiXinAccountInfoDao {
     }
 
 
+    public String getQingBoLatestUpdateDate() {
+        SearchResponse response = client
+                .prepareSearch("weixin_account_qingbo*")
+                .setTypes("type")
+                .addSort("date", SortOrder.DESC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+
+        SearchHits hits = response.getHits();
+        String date = null;
+        for (SearchHit hit : hits) {
+            Map<String, Object> hitmap = new HashMap<String, Object>();
+            hitmap = hit.getSourceAsMap();
+            date = String.valueOf(hitmap.get("date"));
+        }
+        return date;
+    }
     /**
      * 获取订阅数
      * @param weixinid
@@ -365,7 +383,7 @@ public class WeiXinAccountInfoDao {
         Sum sumValue = response.getAggregations().get("follow");
         String sum = sumValue.getValueAsString();
         long count = response.getHits().getTotalHits();
-        System.out.println(sum);
+//        System.out.println(sum);
         if (sum.indexOf("E") != -1) {
             BigDecimal bd = new BigDecimal(sum);
             sum = bd.toPlainString() + ".0";

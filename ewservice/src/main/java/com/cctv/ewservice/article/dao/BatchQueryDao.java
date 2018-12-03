@@ -414,13 +414,17 @@ public class BatchQueryDao {
             String mid = entry.getKeyAsString();
             Map<String, String> map = new HashMap<String, String>();
             map = getWeiBoLatestInfo(mid, startdate, enddate);
-            map.put("brand", keyword);
-            for (Map<String, String> idmap : idList) {
-                if (map.get("weiboid").equals(idmap.get("id"))) {
-                    map.putAll(idmap);
+            if (!map.isEmpty()) {
+                map.put("brand", keyword);
+                for (Map<String, String> idmap : idList) {
+                    if (map.get("weiboid") != null) {
+                        if (map.get("weiboid").equals(idmap.get("id"))) {
+                            map.putAll(idmap);
+                        }
+                    }
                 }
+                list.add(map);
             }
-            list.add(map);
         }
         return list;
     }
@@ -455,49 +459,120 @@ public class BatchQueryDao {
 
         SearchHits hits = response.getHits();
         Map<String, String> map = new HashMap<String, String>();
-        for (SearchHit hit : hits) {
-            Map<String, Object> hitmap = new HashMap<String, Object>();
-            hitmap = hit.getSourceAsMap();
-            String id = String.valueOf(hitmap.get("uid"));
-            String repost = String.valueOf(hitmap.get("reposts_accumulation"));
-            String comment = String.valueOf(hitmap.get("comments_accumulation"));
-            String like = String.valueOf(hitmap.get("attitudes_accumulation"));
-            String read = String.valueOf(hitmap.get("reads_accumulation"));
-            String date = String.valueOf(hitmap.get("created_time"));
+        if (hits.getTotalHits() > 0){
+            for (SearchHit hit : hits) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit.getSourceAsMap();
+                String id = String.valueOf(hitmap.get("uid"));
+                String repost = String.valueOf(hitmap.get("reposts_accumulation"));
+                String comment = String.valueOf(hitmap.get("comments_accumulation"));
+                String like = String.valueOf(hitmap.get("attitudes_accumulation"));
+                String read = String.valueOf(hitmap.get("reads_accumulation"));
+                String date = String.valueOf(hitmap.get("created_time"));
 
-            String create_time = String.valueOf(hitmap.get("created_time"));
-            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
-            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
-            if (live > 0 || video > 0) {
+                String create_time = String.valueOf(hitmap.get("created_time"));
+                int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+                int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
                 String videoUrl = String.valueOf(hitmap.get("video_url"));
-                if (!"None".equals(videoUrl)) {
-                    String first_time = getVideoArticleDate(videoUrl);
-                    if (first_time != null) {
-                        if (!create_time.equals(first_time)) {
-                            if (live > 0) {
-                                live = 0;
-                            } else if (video > 0) {
-                                video = 0;
+            /*if ("None".equals(videoUrl)) {
+                live = 0;
+                video = 0;
+            }*/
+                if (live > 0 || video > 0) {
+                    if (!"None".equals(videoUrl)) {
+                        String first_time = getVideoArticleDate(videoUrl);
+                        if (first_time != null) {
+                            if (!create_time.equals(first_time)) {
+                                if (live > 0) {
+                                    live = 0;
+                                } else if (video > 0) {
+                                    video = 0;
+                                }
                             }
                         }
                     }
                 }
+                int videoNum = live + video;
+
+                int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+
+                map.put("weiboid", id);
+                map.put("source", "微博");
+                map.put("read", read);
+                map.put("share", repost);
+                map.put("videoNum", String.valueOf(videoNum));
+                map.put("hd", String.valueOf(hd));
+                map.put("pub_date", date.substring(0, date.indexOf(" ")));
+                map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
+                map.put("date", date);
+                map.put("url", String.valueOf(hitmap.get("weibo_url")));
+                map.put("title", String.valueOf(hitmap.get("weibo_text")));
             }
-            int videoNum = live + video;
+        } else {
+            BoolQueryBuilder boolquery1 = QueryBuilders.boolQuery();
+            boolquery1.must(termquery1)
+                    .must(termquery2);
 
-            int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+            SearchResponse response1 = client
+                    .prepareSearch("weibo_article_platform*")
+                    .setTypes("type")
+                    .setQuery(boolquery1)
+                    .addSort("date", SortOrder.DESC)
+                    .addSort("digital_of_level", SortOrder.DESC)
+                    .setSearchType(SearchType.QUERY_THEN_FETCH)
+                    .setSize(1)
+                    .get();
 
-            map.put("weiboid", id);
-            map.put("source", "微博");
-            map.put("read", read);
-            map.put("share", repost);
-            map.put("videoNum", String.valueOf(videoNum));
-            map.put("hd", String.valueOf(hd));
-            map.put("pub_date", date.substring(0, date.indexOf(" ")));
-            map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
-            map.put("date", date);
-            map.put("url", String.valueOf(hitmap.get("weibo_url")));
-            map.put("title", String.valueOf(hitmap.get("weibo_text")));
+            SearchHits hits1 = response1.getHits();
+
+            for (SearchHit hit1 : hits1) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit1.getSourceAsMap();
+                String id = String.valueOf(hitmap.get("uid"));
+                String repost = String.valueOf(hitmap.get("reposts_accumulation"));
+                String comment = String.valueOf(hitmap.get("comments_accumulation"));
+                String like = String.valueOf(hitmap.get("attitudes_accumulation"));
+                String read = String.valueOf(hitmap.get("reads_accumulation"));
+                String date = String.valueOf(hitmap.get("created_time"));
+
+                String create_time = String.valueOf(hitmap.get("created_time"));
+                int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+                int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+                String videoUrl = String.valueOf(hitmap.get("video_url"));
+            /*if ("None".equals(videoUrl)) {
+                live = 0;
+                video = 0;
+            }*/
+                if (live > 0 || video > 0) {
+                    if (!"None".equals(videoUrl)) {
+                        String first_time = getVideoArticleDate(videoUrl);
+                        if (first_time != null) {
+                            if (!create_time.equals(first_time)) {
+                                if (live > 0) {
+                                    live = 0;
+                                } else if (video > 0) {
+                                    video = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+                int videoNum = live + video;
+
+                int hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+
+                map.put("weiboid", id);
+                map.put("source", "微博");
+                map.put("read", read);
+                map.put("share", repost);
+                map.put("videoNum", String.valueOf(videoNum));
+                map.put("hd", String.valueOf(hd));
+                map.put("pub_date", date.substring(0, date.indexOf(" ")));
+                map.put("time", date.substring(date.indexOf(" ") + 1, date.length()));
+                map.put("date", date);
+                map.put("url", String.valueOf(hitmap.get("weibo_url")));
+                map.put("title", String.valueOf(hitmap.get("weibo_text")));
+            }
         }
         return map;
     }

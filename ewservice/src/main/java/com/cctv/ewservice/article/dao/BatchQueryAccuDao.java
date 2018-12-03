@@ -408,37 +408,94 @@ public class BatchQueryAccuDao {
         int shareCount = 0;
         int videoNum = 0;
         int hd = 0;
-        for (SearchHit hit : hits) {
-            Map<String, Object> hitmap = new HashMap<String, Object>();
-            hitmap = hit.getSourceAsMap();
-            String repost = String.valueOf(hitmap.get("reposts_accumulation"));
-            String comment = String.valueOf(hitmap.get("comments_accumulation"));
-            String like = String.valueOf(hitmap.get("attitudes_accumulation"));
-            String read = String.valueOf(hitmap.get("reads_accumulation"));
-            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
-            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
-            String create_time = String.valueOf(hitmap.get("created_time"));
-
-            if (live > 0 || video > 0) {
+        if (hits.getTotalHits() > 0) {
+            for (SearchHit hit : hits) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit.getSourceAsMap();
+                String repost = String.valueOf(hitmap.get("reposts_accumulation"));
+                String comment = String.valueOf(hitmap.get("comments_accumulation"));
+                String like = String.valueOf(hitmap.get("attitudes_accumulation"));
+                String read = String.valueOf(hitmap.get("reads_accumulation"));
+                int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+                int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+                String create_time = String.valueOf(hitmap.get("created_time"));
                 String videoUrl = String.valueOf(hitmap.get("video_url"));
-                if (!"None".equals(videoUrl)) {
-                    String first_time = getVideoArticleDate(videoUrl);
-                    if (first_time != null) {
-                        if (!create_time.equals(first_time)) {
-                            if (live > 0) {
-                                live = 0;
-                            } else if (video > 0) {
-                                video = 0;
+            /*if ("None".equals(videoUrl)) {
+                live = 0;
+                video = 0;
+            }*/
+                if (live > 0 || video > 0) {
+                    if (!"None".equals(videoUrl)) {
+                        String first_time = getVideoArticleDate(videoUrl);
+                        if (first_time != null) {
+                            if (!create_time.equals(first_time)) {
+                                if (live > 0) {
+                                    live = 0;
+                                } else if (video > 0) {
+                                    video = 0;
+                                }
                             }
                         }
                     }
                 }
+                readCount = Integer.valueOf(read);
+                shareCount = Integer.valueOf(repost);
+                videoNum = live + video;
+                hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
             }
-            readCount = Integer.valueOf(read);
-            shareCount = Integer.valueOf(repost);
-            videoNum = live + video;
-            hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+        } else {
+            BoolQueryBuilder boolquery1 = QueryBuilders.boolQuery();
+            boolquery1.must(termquery1)
+                    .must(termquery2);
+
+            SearchResponse response1 = client
+                    .prepareSearch("weibo_article_platform*")
+                    .setTypes("type")
+                    .setQuery(boolquery1)
+                    .addSort("date", SortOrder.DESC)
+                    .addSort("digital_of_level", SortOrder.DESC)
+                    .setSearchType(SearchType.QUERY_THEN_FETCH)
+                    .setSize(1)
+                    .get();
+
+            SearchHits hits1 = response1.getHits();
+
+            for (SearchHit hit1 : hits1) {
+                Map<String, Object> hitmap = new HashMap<String, Object>();
+                hitmap = hit1.getSourceAsMap();
+                String repost = String.valueOf(hitmap.get("reposts_accumulation"));
+                String comment = String.valueOf(hitmap.get("comments_accumulation"));
+                String like = String.valueOf(hitmap.get("attitudes_accumulation"));
+                String read = String.valueOf(hitmap.get("reads_accumulation"));
+                int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+                int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+                String create_time = String.valueOf(hitmap.get("created_time"));
+                String videoUrl = String.valueOf(hitmap.get("video_url"));
+            /*if ("None".equals(videoUrl)) {
+                live = 0;
+                video = 0;
+            }*/
+                if (live > 0 || video > 0) {
+                    if (!"None".equals(videoUrl)) {
+                        String first_time = getVideoArticleDate(videoUrl);
+                        if (first_time != null) {
+                            if (!create_time.equals(first_time)) {
+                                if (live > 0) {
+                                    live = 0;
+                                } else if (video > 0) {
+                                    video = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+                readCount = Integer.valueOf(read);
+                shareCount = Integer.valueOf(repost);
+                videoNum = live + video;
+                hd = Integer.valueOf(repost) + Integer.valueOf(comment) + Integer.valueOf(like);
+            }
         }
+
         list.add(readCount);
         list.add(shareCount);
         list.add(hd);

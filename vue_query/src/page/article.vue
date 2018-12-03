@@ -100,8 +100,11 @@
         <el-col :span="2" style="margin-left: 150px">
           <el-button type="success" plain v-on:click="downloadWxExcel">导出</el-button>
         </el-col>
-        <el-col :span="4" style="margin-top: 18px">
-          数据采集时间：{{wx_update}}
+        <el-col :span="4" style="margin-top: 10px">
+          自采更新时间：{{wxbd_update}}
+        </el-col>
+        <el-col :span="4" style="margin-top: 5px">
+          清博更新时间：{{wxqb_update}}
         </el-col>
       </el-row>
     </div>
@@ -747,6 +750,9 @@ export default {
         value: '14',
         label: '央视快讯'
       }, {
+        value: '15',
+        label: '央视网评'
+      }, {
         value: '1',
         label: '央视快评'
       }, {
@@ -787,7 +793,8 @@ export default {
       wx_sec_enddate: '',
       wx_sec_source: '',
       wx_sec_keyword: '',
-      wx_update: '',
+      wxbd_update: '',
+      wxqb_update: '',
       wb_sec_type: '',
       wb_sec_level: '',
       wb_sec_channel: '',
@@ -816,7 +823,8 @@ export default {
     axios.get('/cctv/article/weixin/update', {
     // axios.get('http://localhost:8080/article/weixin/update', {
     }).then(function (response) {
-      this1.wx_update = response.data.date
+      this1.wxbd_update = response.data.bd_date
+      this1.wxqb_update = response.data.qb_date
     })
   },
   methods: {
@@ -2228,6 +2236,7 @@ export default {
       let keyword = this.wx_sec_keyword
       this.wxloading = true
       axios.get('/cctv/article/weixin', {
+      // axios.get('http://localhost:8080/article/weixin', {
         params: {
           type: type,
           level: level,
@@ -2255,6 +2264,7 @@ export default {
       let keyword = this.wb_sec_keyword
       this.wbloading = true
       axios.get('/cctv/article/weibo', {
+      // axios.get('http://localhost:8080/article/weibo', {
         params: {
           type: type,
           level: level,

@@ -869,6 +869,11 @@ public class CommonDateFunction {
         return CommonDateFunction.formatDate(before);
     }
 
+    public static String getSevenBeforeDate(String date, String format) throws ParseException {
+        Date before = new Date(CommonDateFunction.parseDate(date, format).getTime() - 3600L * 24 * 1000 * 7);
+        return CommonDateFunction.formatDate(before);
+    }
+
     //转换日期字符串，可能出现的情况
     //2016；
     //2015，2016；
@@ -1255,6 +1260,14 @@ public class CommonDateFunction {
             String tenbfDate = null;
             try {
                 tenbfDate = CommonDateFunction.getTenBeforeDate(date, "yyyy-MM-dd");
+            } catch (ParseException e) {
+            }
+            return tenbfDate;
+        }
+        if (circle == 7) {
+            String tenbfDate = null;
+            try {
+                tenbfDate = CommonDateFunction.getSevenBeforeDate(date, "yyyy-MM-dd");
             } catch (ParseException e) {
             }
             return tenbfDate;

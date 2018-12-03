@@ -56,8 +56,11 @@
             </el-option>
           </el-select>
         </el-col>
-        <el-col :span="4" style="margin-top: 18px">
-          数据采集时间：{{wx_update}}
+        <el-col :span="4" style="margin-top: 8px">
+          自采更新时间：{{wxbd_update}}
+        </el-col>
+        <el-col :span="4" style="margin-top: 5px">
+          清博更新时间：{{wxqb_update}}
         </el-col>
       </el-row>
       <el-row>
@@ -102,6 +105,15 @@
           <el-button type="success" plain v-on:click="downloadWxExcel">导出</el-button>
         </el-col>
       </el-row>
+      <!--<el-row>
+        <el-col :span="4" style="margin-top: 18px">
+          自采更新时间：{{wxbd_update}}
+        </el-col>
+        <el-col :span="3"></el-col>
+        <el-col :span="4" style="margin-top: 18px">
+          清博更新时间：{{wxqb_update}}
+        </el-col>
+      </el-row>-->
     </div>
     <div class="data-table" v-show="wx_show">
       <el-table
@@ -517,7 +529,8 @@ export default {
       wx_sec_type: '',
       wx_sec_level: '',
       wx_sec_channel: '',
-      wx_update: '',
+      wxbd_update: '',
+      wxqb_update: '',
       wx_sec_startdate: '',
       wx_sec_enddate: '',
       wb_sec_startdate: '',
@@ -539,7 +552,9 @@ export default {
     axios.get('/cctv/account/weixin/update', {
     // axios.get('http://localhost:8080/account/weixin/update', {
     }).then(function (response) {
-      this1.wx_update = response.data.date
+      // console.log(response.data)
+      this1.wxbd_update = response.data.bd_date
+      this1.wxqb_update = response.data.qb_date
     })
   },
   methods: {

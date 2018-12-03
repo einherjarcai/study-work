@@ -4,6 +4,7 @@ import com.cctv.ewservice.article.dao.BrandAccuSecDao;
 import com.cctv.ewservice.article.dao.BrandDao;
 import com.cctv.ewservice.article.dao.BrandDepartDayDao;
 import com.cctv.ewservice.article.dao.BrandSecDao;
+import com.cctv.ewservice.common.CommonDateFunction;
 import net.sf.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -252,6 +253,7 @@ public class BrandService {
                 keywordList.add("时政快讯");
                 keywordList.add("时政新闻眼");
                 keywordList.add("央视快讯");
+                keywordList.add("央视网评");
                 break;
             case 1:
                 keywordList.add("央视快评");
@@ -295,6 +297,9 @@ public class BrandService {
             case 14:
                 keywordList.add("央视快讯");
                 break;
+            case 15:
+                keywordList.add("央视网评");
+                break;
             default:
                 keywordList.add("央视快评");
                 keywordList.add("国际锐评");
@@ -310,6 +315,7 @@ public class BrandService {
                 keywordList.add("时政快讯");
                 keywordList.add("时政新闻眼");
                 keywordList.add("央视快讯");
+                keywordList.add("央视网评");
         }
         return keywordList;
     }
@@ -464,6 +470,8 @@ public class BrandService {
 
         List<String> wxQingBoList = new ArrayList<String>();
         List<String> wbQingBoList = new ArrayList<String>();
+        /*long s1 = System.currentTimeMillis();
+        System.out.println("品牌账号存在： " + s1);*/
         for (String id : wxList) {
             if (!brandSecDao.isWxIdExit(id, startdate, enddate)) {
                 wxQingBoList.add(id);
@@ -474,13 +482,17 @@ public class BrandService {
                 wbQingBoList.add(id);
             }
         }
-//        System.out.println("品牌后: " + System.currentTimeMillis());
+       /* long s2 = System.currentTimeMillis();
+        System.out.println("品牌账号完毕： " + s2);
+        double d1 = (s2 -s1) / 1000;
+        System.out.println("账号存在查询时间：   " + d1);*/
         List<Map<String, String>> list = new ArrayList<Map<String, String>>();
 
         for (int i = 0; i < keywordList.size(); ++i) {
             List<Map<String, String>> wx_result = new ArrayList<Map<String, String>>();
             List<Map<String, String>> wb_result = new ArrayList<Map<String, String>>();
-
+           /* long s3 = System.currentTimeMillis();
+            System.out.println("第一个品牌：  " + s3);*/
             List<Map<String, String>> wx_bigdata_list = new ArrayList<Map<String, String>>();
             wx_bigdata_list = brandSecDao.getWeiXinAllMsgidInfo(wxList, startdate, enddate, keywordList.get(i), wxidList);
             wx_result.addAll(wx_bigdata_list);
@@ -500,6 +512,9 @@ public class BrandService {
                 wb_qb_list = brandSecDao.getQingBoWeiBoArticleInfo(wbQingBoList, startdate, enddate, keywordList.get(i), wxidList);
                 wb_result.addAll(wb_qb_list);
             }
+            /*long s4 = System.currentTimeMillis();
+            double d2 = (s4 -s3) / 1000;
+            System.out.println("品牌查询时间：   " + d2);*/
             wb_result = TimeSortList(wb_result);
 
             list.addAll(wx_result);
@@ -541,8 +556,10 @@ public class BrandService {
                 wbQingBoList.add(id);
             }
         }
-
+        String before_day = CommonDateFunction.convertCircleToBFStartDate(0, startdate);
+        String seven_before_day = CommonDateFunction.convertCircleToBFStartDate(7, startdate);
         for (int i = 0; i < keywordList.size(); ++i) {
+            brandDepartDayDao.getSevenDayMsgid(wxidList, seven_before_day, before_day, keywordList.get(i));
             for (int j = 0; j < dateList.size(); ++j) {
                 Map<String, String> result = new HashMap<String, String>();
                 int weixinCount = 0;
@@ -575,7 +592,7 @@ public class BrandService {
                 }
 
                 List<Integer> wb_bigdata = new ArrayList<Integer>();
-                wb_bigdata = brandDepartDayDao.getWeiBoAccuAllMsgidInfo(wbidList, dateList.get(j), dateList.get(j), keywordList.get(i));
+                wb_bigdata = brandDepartDayDao.getWeiBoBrandArticleInfo(wbidList, dateList.get(j), keywordList.get(i));
                 if (wb_bigdata.size() == 5) {
                     weiboCount += wb_bigdata.get(0);
                     weiboRead += wb_bigdata.get(1);
@@ -614,7 +631,7 @@ public class BrandService {
     }
 
     /**
-     * 品牌分天页面数据
+     * 品牌分条页面数据
      * @param type
      * @param channel
      * @param key

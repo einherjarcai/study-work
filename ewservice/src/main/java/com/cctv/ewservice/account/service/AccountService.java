@@ -261,9 +261,11 @@ public class AccountService {
 
 
     public String getWeiXinLatestUpdate() {
-        String date = weiXinAccountInfoDao.getLatestUpdateDate();
+        String bd_date = weiXinAccountInfoDao.getLatestUpdateDate();
+        String qb_date = weiXinAccountInfoDao.getQingBoLatestUpdateDate();
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("date", date);
+        jsonObject.put("bd_date", bd_date);
+        jsonObject.put("qb_date", qb_date);
         return jsonObject.toString();
     }
 
@@ -327,13 +329,21 @@ public class AccountService {
      * @return
      */
     public List<Map<String,String>> getWeiXinAccountList(int type, int level, int channel, String startdate, String enddate, int accu) {
+        /*long s1 = System.currentTimeMillis();
+        System.out.println("微信开始： " + s1);*/
         List<Map<String,String>> list = new ArrayList<Map<String,String>>();
         list = getWeiXinIDList(type, level, channel);
+        /*long s2 = System.currentTimeMillis();
+        System.out.println("账号查询： " + s2);
+        double f1 = (s1 - s2) / 1000;
+        System.out.println("账号查询时间：    " + f1);*/
         List<Map<String,String>> result_list = new ArrayList<Map<String,String>>();
         List<String> datelist = new ArrayList<String>();
         datelist = getBetweenDate(startdate, enddate);
         for (int i = 0; i < datelist.size(); i++){
             List<Map<String,String>> id_result_list = new ArrayList<Map<String,String>>();
+            /*long s3 = System.currentTimeMillis();
+            System.out.println("第一天开始： " + s3);*/
             for (Map<String, String> map :list) {
                 Map<String, String>  result = new HashMap<String, String>();
                 List<String> flowerlist = new ArrayList<String>();
@@ -366,6 +376,10 @@ public class AccountService {
                     id_result_list.add(result);
                 }
             }
+            /*long s4 = System.currentTimeMillis();
+            System.out.println("第一天结束： " + s4);
+            double f2 = (s4 - s3) / 1000;
+            System.out.println("第一天查询时间：   " + f2);*/
             if (accu == 0) {
                 id_result_list = SortList(id_result_list);
             }
@@ -374,6 +388,7 @@ public class AccountService {
         if (accu == 1) {
             result_list = getWeiXinAccuData(list, result_list, startdate, enddate);
         }
+//        System.out.println("结束： " + System.currentTimeMillis());
         return result_list;
     }
 
@@ -588,12 +603,20 @@ public class AccountService {
      */
     public List<Map<String,String>> getWeiBoAccountList(int type, int level, int channel, String startdate, String enddate, int accu) {
         List<Map<String,String>> list = new ArrayList<Map<String,String>>();
+        /*long s1 = System.currentTimeMillis();
+        System.out.println("微博开始： " + s1);*/
         list = getWeiBoIDList(type, level, channel);
+        /*long s2 = System.currentTimeMillis();
+        System.out.println("账号查询： " + s2);
+        double f1 = (s1 - s2) / 1000;
+        System.out.println("账号查询时间：    " + f1);*/
         List<Map<String,String>> result_list = new ArrayList<Map<String,String>>();
         List<String> datelist = new ArrayList<String>();
         datelist = getBetweenDate(startdate, enddate);
         for (int i = 0; i < datelist.size(); ++i) {
             List<Map<String,String>> id_result_list = new ArrayList<Map<String,String>>();
+            /*long s3 = System.currentTimeMillis();
+            System.out.println("第一天开始： " + s3);*/
             for (Map<String, String> map :list) {
                 Map<String, String>  result = new HashMap<String, String>();
                 String flowers = weiBoAccountInfoDao.getWeiboFlowerByID(map.get("id"), datelist.get(i));
@@ -615,6 +638,10 @@ public class AccountService {
                     id_result_list.add(result);
                 }
             }
+            /*long s4 = System.currentTimeMillis();
+            System.out.println("第一天结束： " + s4);
+            double f2 = (s4 - s3) / 1000;
+            System.out.println("第一天查询时间：   " + f2);*/
             if (accu == 0) {
                 id_result_list = SortList(id_result_list);
             }
@@ -623,6 +650,7 @@ public class AccountService {
         if (accu == 1) {
             result_list = getWeiBoAccuData(list, result_list, startdate, enddate);
         }
+//        System.out.println("结束： " + System.currentTimeMillis());
         return result_list;
     }
 

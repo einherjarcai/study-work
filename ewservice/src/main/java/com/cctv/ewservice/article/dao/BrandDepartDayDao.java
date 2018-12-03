@@ -54,11 +54,9 @@ public class BrandDepartDayDao {
     }
 
     private List<String> msgList = new ArrayList<String>();
-    private List<String> midList = new ArrayList<String>();
 
     public void setMsgMidListToNull() {
         msgList.clear();
-        midList.clear();
     }
 
     /**
@@ -123,6 +121,38 @@ public class BrandDepartDayDao {
         return list;
     }
 
+    public void getSevenDayMsgid(List<String> weixinid, String startdate, String enddate, String keyword) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("weixin_id", weixinid);
+        QueryBuilder termquery2 = QueryBuilders.termQuery("level", "3");
+
+        QueryBuilder termquery3 = QueryBuilders.matchPhraseQuery("title", keyword);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("pub_date").from(startdate).to(enddate);
+        boolquery.must(termquery1)
+                .must(termquery2)
+                .must(termquery3)
+                .must(rangequery);
+
+        TermsAggregationBuilder msgidAgg = AggregationBuilders.terms("msgid").field("msgid").size(10000);
+
+        SearchResponse response = client
+                .prepareSearch("weixin_article_accu_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("pub_date", SortOrder.ASC)
+                .addAggregation(msgidAgg)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(10000)
+                .get();
+        Terms term = response.getAggregations().get("msgid");
+
+        for (Terms.Bucket entry : term.getBuckets()) {
+            String msgid = entry.getKeyAsString();
+            msgList.add(msgid);
+        }
+
+    }
+
     public List<Integer> getNowMsgData(String date) {
         int readCount = 0;
         int shareCount = 0;
@@ -178,7 +208,7 @@ public class BrandDepartDayDao {
                 }
             }
         }
-        msgList = msg;
+//        msgList = msg;
         List<Integer> resultlist = new ArrayList<Integer>();
         resultlist.add(readCount);
         resultlist.add(shareCount);
@@ -372,7 +402,7 @@ public class BrandDepartDayDao {
      * @param keyword
      * @return
      */
-    public List<Integer> getWeiBoAccuAllMsgidInfo(List<String> weiboid, String startdate, String enddate, String keyword) {
+    /*public List<Integer> getWeiBoAccuAllMsgidInfo(List<String> weiboid, String startdate, String enddate, String keyword) {
         int read = 0;
         int share = 0;
         int hd = 0;
@@ -427,8 +457,283 @@ public class BrandDepartDayDao {
         list.add(hd);
         list.add(video);
         return list;
+    }*/
+
+
+    /**
+     * 大数据所有微博账号对应的文章指标
+     * @param weiboid
+     * @param date
+     * @param keyword
+     * @return
+     */
+    public List<Integer> getWeiBoBrandArticleInfo(List<String> weiboid, String date, String keyword) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("uid", weiboid);
+        QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
+        QueryBuilder termquery3 = QueryBuilders.termQuery("date", date);
+        QueryBuilder termquery4 = QueryBuilders.matchPhraseQuery("weibo_text", keyword);
+        String ten_before_day = CommonDateFunction.convertCircleToBFStartDate(10, date);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("created_time").from(ten_before_day + " 00:00:00").to(date + " 23:59:59");
+        boolquery.must(termquery1)
+                .must(termquery2)
+                .must(termquery3)
+                .must(termquery4)
+                .must(rangequery);
+
+        TermsAggregationBuilder midAgg = AggregationBuilders.terms("mid").field("mid").size(1000);
+
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addAggregation(midAgg)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(10000)
+                .get();
+
+        int read = 0;
+        int share = 0;
+        int hd = 0;
+        int video = 0;
+
+        Terms term = response.getAggregations().get("mid");
+
+        for (Terms.Bucket entry : term.getBuckets()) {
+            String mid = entry.getKeyAsString();
+            List<Integer> list = new ArrayList<Integer>();
+            list = getWeiBoArticleLatestInfo(mid, date);
+            read += list.get(0);
+            share += list.get(1);
+            hd += list.get(2);
+            video += list.get(3);
+        }
+        List<Integer> index = new ArrayList<Integer>();
+        int count = getWeiBoArticleCount(weiboid, date, keyword);
+        index.add(count);
+        index.add(read);
+        index.add(share);
+        index.add(hd);
+        index.add(video);
+        return index;
     }
 
+    /**
+     * 当天的品牌微博文章数
+     * @param weiboid
+     * @param date
+     * @param keyword
+     * @return
+     */
+    public int getWeiBoArticleCount(List<String> weiboid, String date, String keyword) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("uid", weiboid);
+        QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
+        QueryBuilder termquery3 = QueryBuilders.matchPhraseQuery("weibo_text", keyword);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("created_time").from(date + " 00:00:00").to(date + " 23:59:59");
+        boolquery.must(termquery1)
+                .must(termquery2)
+                .must(termquery3)
+                .must(rangequery);
+
+        TermsAggregationBuilder midAgg = AggregationBuilders.terms("mid").field("mid").size(1000);
+
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addAggregation(midAgg)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(10000)
+                .get();
+
+        Terms term = response.getAggregations().get("mid");
+        int count = term.getBuckets().size();
+        return count;
+    }
+
+
+    /**
+     * 获取周期时间统计的微博品牌文章数据
+     * @param mid
+     * @return
+     */
+    public List<Integer> getWeiBoArticleLatestInfo(String mid, String date) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termQuery("mid", mid);
+        QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
+        QueryBuilder termquery3 = QueryBuilders.termQuery("date", date);
+        boolquery.must(termquery1)
+                .must(termquery2)
+                .must(termquery3);
+
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("date", SortOrder.DESC)
+                .addSort("digital_of_level", SortOrder.DESC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+        SearchHits hits = response.getHits();
+        List<Integer> list = new ArrayList<Integer>();
+        for (SearchHit hit : hits) {
+            Map<String, Object> hitmap = new HashMap<String, Object>();
+            hitmap = hit.getSourceAsMap();
+            String create_time = String.valueOf(hitmap.get("created_time"));
+            String pub_date = String.valueOf(hitmap.get("created_time"));
+            pub_date = pub_date.substring(0, pub_date.indexOf(" "));
+            int read = Integer.valueOf(String.valueOf(hitmap.get("reads_accumulation")));
+            int like = Integer.valueOf(String.valueOf(hitmap.get("attitudes_accumulation")));
+            int comment = Integer.valueOf(String.valueOf(hitmap.get("comments_accumulation")));
+            int repost = Integer.valueOf(String.valueOf(hitmap.get("reposts_accumulation")));
+            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+            String videoUrl = String.valueOf(hitmap.get("video_url"));
+            /*if ("None".equals(videoUrl)) {
+                live = 0;
+                video = 0;
+            }*/
+            if (live > 0 || video > 0) {
+                if (!"None".equals(videoUrl)) {
+                    String first_time = getVideoArticleDate(videoUrl);
+                    if (first_time != null) {
+                        if (!create_time.equals(first_time)) {
+                            if (live > 0) {
+                                live = 0;
+                            } else if (video > 0) {
+                                video = 0;
+                            }
+                        }
+                    }
+                }
+            }
+            int videoNum = live + video;
+            int all = like + comment + repost;
+            if (!pub_date.equals(date)) {
+                if (read > 0) {
+                    List<Integer> yes_list = new ArrayList<Integer>();
+                    yes_list = getYesDataInfo(mid, date);
+                    if (yes_list.size() > 0) {
+                        int yes_read = yes_list.get(0);
+                        int yes_share = yes_list.get(1);
+                        int yes_all = yes_list.get(2);
+                        int yes_videoNum = yes_list.get(3);
+                        read = read - yes_read;
+                        repost = repost - yes_share;
+                        if (videoNum > 0) {
+                            videoNum = videoNum - yes_videoNum;
+                        }
+                        all = all - yes_all;
+                    }
+                }
+            }
+            if (read < 0) {
+                read = 0;
+            }
+            if (repost < 0) {
+                repost = 0;
+            }
+            if (videoNum < 0) {
+                videoNum = 0;
+            }
+            if (all < 0) {
+                all = 0;
+            }
+            list.add(read);
+            list.add(repost);
+            list.add(all);
+            list.add(videoNum);
+        }
+        return list;
+    }
+
+
+    /**
+     * 获取不是当天发布微博品牌文章的上一次统计的阅读数
+     * @param mid
+     * @param date
+     * @return
+     */
+    public List<Integer> getYesDataInfo(String mid, String date) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termQuery("mid", mid);
+        QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
+//        QueryBuilder termquery3 = QueryBuilders.termQuery("date", date);
+        String ten_before_day = CommonDateFunction.convertCircleToBFStartDate(10, date);
+        String before_day = CommonDateFunction.convertCircleToBFStartDate(0, date);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(ten_before_day).to(before_day);
+        boolquery.must(termquery1)
+                .must(termquery2)
+                .must(rangequery);
+
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("date", SortOrder.DESC)
+                .addSort("digital_of_level", SortOrder.DESC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+        SearchHits hits = response.getHits();
+        List<Integer> list = new ArrayList<Integer>();
+        for (SearchHit hit : hits) {
+            Map<String, Object> hitmap = new HashMap<String, Object>();
+            hitmap = hit.getSourceAsMap();
+            int read = Integer.valueOf(String.valueOf(hitmap.get("reads_accumulation")));
+            int like = Integer.valueOf(String.valueOf(hitmap.get("attitudes_accumulation")));
+            int comment = Integer.valueOf(String.valueOf(hitmap.get("comments_accumulation")));
+            int repost = Integer.valueOf(String.valueOf(hitmap.get("reposts_accumulation")));
+            int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
+            int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+            int all = like + comment + repost;
+            int videoNum = video + live;
+            list.add(read);
+            list.add(repost);
+            list.add(all);
+            list.add(videoNum);
+        }
+        return list;
+    }
+
+
+    /**
+     * 查询开始日期前10天内所有满足条件的微博mid
+     * @param weiboid
+     * @param startdate
+     * @param enddate
+     * @param keyword
+     */
+    /*public void getTenDayAllMid(List<String> weiboid, String startdate, String enddate, String keyword) {
+        BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
+        QueryBuilder termquery1 = QueryBuilders.termsQuery("uid", weiboid);
+
+        QueryBuilder termquery2 = QueryBuilders.matchPhraseQuery("weibo_text", keyword);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("created_time").from(startdate + " 00:00:00").to(enddate + " 23:59:59");
+        boolquery.must(termquery1)
+                .must(termquery2)
+                .must(rangequery);
+
+        TermsAggregationBuilder midAgg = AggregationBuilders.terms("mid").field("mid").size(10000);
+
+        SearchResponse response = client
+                .prepareSearch("weibo_article_platform*")
+                .setTypes("type")
+                .setQuery(boolquery)
+                .addSort("created_time", SortOrder.ASC)
+                .addAggregation(midAgg)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(10000)
+                .get();
+        Terms term = response.getAggregations().get("mid");
+
+        for (Terms.Bucket entry : term.getBuckets()) {
+            String msgid = entry.getKeyAsString();
+            midList.add(msgid);
+        }
+    }
 
 
     public List<Integer> getNowMidData(String date) {
@@ -451,7 +756,6 @@ public class BrandDepartDayDao {
                     .prepareSearch("weibo_article_platform*")
                     .setTypes("type")
                     .setQuery(boolquery)
-                    .addSort("date", SortOrder.DESC)
                     .addSort("digital_of_level", SortOrder.DESC)
                     .setSearchType(SearchType.QUERY_THEN_FETCH)
                     .setSize(1)
@@ -492,9 +796,8 @@ public class BrandDepartDayDao {
                     int video_num = (live + video);
 
                     if (read_count > 0) {
-                        String before_day = CommonDateFunction.convertCircleToBFStartDate(0, date);
                         List<Integer> list = new ArrayList<Integer>();
-                        list = getYesMidData(before_day, s);
+                        list = getYesMidData(date, s);
                         read_count -= list.get(0);
                         share_ount -= list.get(1);
                         hd_count -= list.get(2);
@@ -519,7 +822,7 @@ public class BrandDepartDayDao {
                 }
             }
         }
-        midList = mid;
+//        midList = mid;
         List<Integer> resultlist = new ArrayList<Integer>();
         resultlist.add(readCount);
         resultlist.add(shareCount);
@@ -532,11 +835,14 @@ public class BrandDepartDayDao {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("mid", msgid);
         QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
-        QueryBuilder termquery3 = QueryBuilders.termQuery("date", date);
+//        QueryBuilder termquery3 = QueryBuilders.termQuery("date", date);
+        String ten_before_day = CommonDateFunction.convertCircleToBFStartDate(10, date);
+        String before_day = CommonDateFunction.convertCircleToBFStartDate(0, date);
+        RangeQueryBuilder rangequery = QueryBuilders.rangeQuery("date").from(ten_before_day).to(before_day);
 
         boolquery.must(termquery1)
                 .must(termquery2)
-                .must(termquery3);
+                .must(rangequery);
 
         SearchResponse response = client
                 .prepareSearch("weibo_article_platform*")
@@ -591,7 +897,7 @@ public class BrandDepartDayDao {
         list.add(hd);
         list.add(videoNum);
         return list;
-    }
+    }*/
 
 
 
@@ -602,7 +908,7 @@ public class BrandDepartDayDao {
      * @param enddate
      * @return
      */
-    public List<Integer> getWeiBoLatestInfo(String mid, String startdate, String enddate) {
+    /*public List<Integer> getWeiBoLatestInfo(String mid, String startdate, String enddate) {
         BoolQueryBuilder boolquery = QueryBuilders.boolQuery();
         QueryBuilder termquery1 = QueryBuilders.termQuery("mid", mid);
         QueryBuilder termquery2 = QueryBuilders.termQuery("level", "2");
@@ -663,7 +969,7 @@ public class BrandDepartDayDao {
         list.add(hd);
         list.add(videoNum);
         return list;
-    }
+    }*/
 
 
     /**

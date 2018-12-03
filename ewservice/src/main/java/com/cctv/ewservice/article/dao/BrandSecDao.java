@@ -461,8 +461,12 @@ public class BrandSecDao {
             String create_time = String.valueOf(hitmap.get("created_time"));
             int live = Integer.valueOf(String.valueOf(hitmap.get("live_play_accumulation")));
             int video = Integer.valueOf(String.valueOf(hitmap.get("video_play_accumulation")));
+            String videoUrl = String.valueOf(hitmap.get("video_url"));
+            /*if ("None".equals(videoUrl)) {
+                live = 0;
+                video = 0;
+            }*/
             if (live > 0 || video > 0) {
-                String videoUrl = String.valueOf(hitmap.get("video_url"));
                 if (!"None".equals(videoUrl)) {
                     String first_time = getVideoArticleDate(videoUrl);
                     if (first_time != null) {

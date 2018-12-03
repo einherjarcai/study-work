@@ -332,6 +332,26 @@ public class WeiXinArticle {
     }
 
 
+    public String getQingBoLatestUpdateDate() {
+        SearchResponse response = client
+                .prepareSearch("weixin_article_qingbo*")
+                .setTypes("type")
+                .addSort("posttime", SortOrder.DESC)
+                .setSearchType(SearchType.QUERY_THEN_FETCH)
+                .setSize(1)
+                .get();
+
+        SearchHits hits = response.getHits();
+        String date = null;
+        for (SearchHit hit : hits) {
+            Map<String, Object> hitmap = new HashMap<String, Object>();
+            hitmap = hit.getSourceAsMap();
+            date = String.valueOf(hitmap.get("posttime"));
+            date = date.substring(0, date.indexOf(" "));
+        }
+        return date;
+    }
+
     /**
      * 查询大数据中心的文章表中是否含有某个微信号的文章
      * @param weixinid

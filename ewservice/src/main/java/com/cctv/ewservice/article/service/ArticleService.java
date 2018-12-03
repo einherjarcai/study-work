@@ -251,9 +251,11 @@ public class ArticleService {
     }
 
     public String getWeiXinLatestUpdate() {
-        String date = weiXinArticle.getLatestUpdateDate();
+        String bd_date = weiXinArticle.getLatestUpdateDate();
+        String qb_date = weiXinArticle.getQingBoLatestUpdateDate();
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("date", date);
+        jsonObject.put("bd_date", bd_date);
+        jsonObject.put("qb_date", qb_date);
         return jsonObject.toString();
     }
 

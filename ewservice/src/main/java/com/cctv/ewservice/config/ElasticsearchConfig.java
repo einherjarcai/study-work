@@ -37,6 +37,7 @@ public class ElasticsearchConfig {
     @Bean(name = "transportClient")
     public TransportClient getEsClient() {
         TransportClient client = null;
+//        long l1 = System.currentTimeMillis();
         if (client == null) {
             synchronized (TransportClient.class) {
                 Settings settings = Settings.builder().put("cluster.name", cluster_name).build();
@@ -50,10 +51,10 @@ public class ElasticsearchConfig {
                 }
             }
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        long l1 = System.currentTimeMillis();
-        String sd1 = sdf.format(new Date(l1));   // 时间戳转换成时间
-//        System.out.println("链接" + sd1);
+        /*SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        long l2 = System.currentTimeMillis();
+        String sd1 = sdf.format(new Date(l2 - l1));   // 时间戳转换成时间
+        System.out.println("链接" + (l2 - l1));*/
         return client;
     }
 }
